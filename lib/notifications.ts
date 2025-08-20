@@ -235,6 +235,16 @@ export async function sendNotification({
         await emailService.sendWelcomeEmail(recipientEmail, data.userName, data.userRole || "user")
         break
 
+      case "welcome_with_credentials":
+        await emailService.sendWelcomeWithCredentialsEmail(
+          recipientEmail, 
+          data.userName, 
+          data.userRole || "user", 
+          data.temporaryPassword,
+          data.loginUrl
+        )
+        break
+
       case "password_reset":
         await emailService.sendPasswordResetEmail(recipientEmail, data.userName, data.resetToken || data.newPassword)
         break

@@ -101,6 +101,7 @@ export default function UserManagement() {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [showPassword, setShowPassword] = useState(false)
+  const [useTemporaryPassword, setUseTemporaryPassword] = useState(true)
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -184,9 +185,13 @@ export default function UserManagement() {
 
       const requestBody: any = {
         email: formData.email,
-        password: formData.password,
         role: formData.role,
         name: formData.name,
+        useTemporaryPassword,
+      }
+
+      if (!useTemporaryPassword) {
+        requestBody.password = formData.password
       }
 
       if (formData.role === "tpa" && formData.tpaId) {
@@ -357,26 +362,47 @@ export default function UserManagement() {
                     placeholder="Enter email address"
                   />
                 </div>
-                <div>
-                  <Label>Password</Label>
-                  <div className="relative">
-                    <Input
-                      type={showPassword ? "text" : "password"}
-                      value={formData.password}
-                      onChange={(e) => setFormData({...formData, password: e.target.value})}
-                      placeholder="Enter password"
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="useTemporaryPassword"
+                      checked={useTemporaryPassword}
+                      onCheckedChange={(checked) => setUseTemporaryPassword(checked as boolean)}
                     />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
+                    <Label htmlFor="useTemporaryPassword" className="text-sm">
+                      Generate temporary password (recommended)
+                    </Label>
                   </div>
+                  <p className="text-xs text-gray-600">
+                    {useTemporaryPassword 
+                      ? "A secure temporary password will be generated and sent via email. User must change it on first login."
+                      : "User will use the password you specify below."
+                    }
+                  </p>
                 </div>
+                {!useTemporaryPassword && (
+                  <div>
+                    <Label>Password</Label>
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        value={formData.password}
+                        onChange={(e) => setFormData({...formData, password: e.target.value})}
+                        placeholder="Enter password"
+                        required={!useTemporaryPassword}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 <div>
                   <Label>Role</Label>
                   <Select value={formData.role} onValueChange={(value) => setFormData({...formData, role: value, tpaId: "", facilityId: ""})}>

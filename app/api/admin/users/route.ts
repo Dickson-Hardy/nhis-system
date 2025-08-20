@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { eq, ilike, and, or, sql, desc } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { users, tpas, facilities } from "@/lib/db/schema"
-import { verifyToken } from "@/lib/auth"
+import { verifyToken, generateTemporaryPassword, hashPassword } from "@/lib/auth"
+import { sendNotification } from "@/lib/notifications"
 import bcrypt from "bcryptjs"
 
 export async function GET(request: NextRequest) {
@@ -137,12 +138,20 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { email, password, role, name, tpaId, facilityId } = body
+    const { email, password, role, name, tpaId, facilityId, useTemporaryPassword = true } = body
 
     // Validate required fields
-    if (!email || !password || !role || !name) {
+    if (!email || !role || !name) {
       return NextResponse.json(
-        { error: "Email, password, role, and name are required" },
+        { error: "Email, role, and name are required" },
+        { status: 400 }
+      )
+    }
+
+    // If not using temporary password, validate that password is provided
+    if (!useTemporaryPassword && !password) {
+      return NextResponse.json(
+        { error: "Password is required when not using temporary password" },
         { status: 400 }
       )
     }
@@ -184,8 +193,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Generate password - either provided or temporary
+    let finalPassword: string
+    let isTemporary = false
+
+    if (useTemporaryPassword) {
+      finalPassword = await generateTemporaryPassword()
+      isTemporary = true
+    } else {
+      finalPassword = password
+      isTemporary = false
+    }
+
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12)
+    const hashedPassword = await hashPassword(finalPassword)
 
     // Create user
     const newUser = await db
@@ -198,6 +219,8 @@ export async function POST(request: NextRequest) {
         tpaId: role === "tpa" ? tpaId : null,
         facilityId: role === "facility" ? facilityId : null,
         isActive: true,
+        isTemporaryPassword: isTemporary,
+        lastPasswordChange: isTemporary ? null : new Date(),
       })
       .returning({
         id: users.id,
@@ -205,8 +228,33 @@ export async function POST(request: NextRequest) {
         role: users.role,
         name: users.name,
         isActive: users.isActive,
+        isTemporaryPassword: users.isTemporaryPassword,
         createdAt: users.createdAt,
       })
+
+    // Send welcome notification with credentials if using temporary password
+    if (isTemporary) {
+      await sendNotification({
+        type: "welcome_with_credentials",
+        recipientEmail: email,
+        data: {
+          userName: name,
+          userRole: role,
+          temporaryPassword: finalPassword,
+          loginUrl: `${process.env.NEXT_PUBLIC_APP_URL}/login`,
+        },
+      })
+    } else {
+      // Send regular welcome notification
+      await sendNotification({
+        type: "welcome",
+        recipientEmail: email,
+        data: {
+          userName: name,
+          userRole: role,
+        },
+      })
+    }
 
     return NextResponse.json({
       message: "User created successfully",

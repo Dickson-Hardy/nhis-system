@@ -8,7 +8,7 @@ import type { User } from "@/lib/auth"
 interface AuthContextType {
   user: User | null
   loading: boolean
-  login: (email: string, password: string) => Promise<boolean>
+  login: (email: string, password: string) => Promise<{ success: boolean; requiresPasswordChange?: boolean }>
   logout: () => Promise<void>
 }
 
@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; requiresPasswordChange?: boolean }> => {
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
@@ -50,12 +50,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response.ok) {
         const data = await response.json()
         setUser(data.user)
-        return true
+        return { 
+          success: true, 
+          requiresPasswordChange: data.requiresPasswordChange 
+        }
       }
-      return false
+      return { success: false }
     } catch (error) {
       console.error("Login failed:", error)
-      return false
+      return { success: false }
     }
   }
 

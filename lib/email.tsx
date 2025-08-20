@@ -96,6 +96,22 @@ export class EmailService {
     })
   }
 
+  async sendWelcomeWithCredentialsEmail(
+    recipientEmail: string, 
+    recipientName: string, 
+    role: string, 
+    temporaryPassword: string,
+    loginUrl: string
+  ): Promise<boolean> {
+    const template = this.getWelcomeWithCredentialsTemplate(recipientName, role, temporaryPassword, loginUrl)
+
+    return this.sendEmail({
+      to: [recipientEmail],
+      subject: "Welcome to NHIS Portal - Your Account Details",
+      html: template,
+    })
+  }
+
   async sendPasswordResetEmail(recipientEmail: string, recipientName: string, resetToken: string): Promise<boolean> {
     const template = this.getPasswordResetTemplate(recipientName, resetToken)
 
@@ -312,6 +328,74 @@ export class EmailService {
                  style="background: #1f2937; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
                 Access Portal
               </a>
+            </div>
+            
+            <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px; text-align: center; color: #6b7280; font-size: 14px;">
+              <p>If you have any questions, please contact our support team.</p>
+              <p>© 2024 Nigerian Health Insurance Scheme. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `
+  }
+
+  private getWelcomeWithCredentialsTemplate(
+    recipientName: string, 
+    role: string, 
+    temporaryPassword: string, 
+    loginUrl: string
+  ): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Welcome to NHIS Portal - Your Account Details</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: #f8f9fa; padding: 30px; border-radius: 10px; margin-bottom: 30px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #1f2937; margin: 0; font-size: 28px;">Welcome to NHIS Portal</h1>
+              <p style="color: #6b7280; margin: 5px 0 0 0;">Nigerian Health Insurance Scheme</p>
+            </div>
+            
+            <p style="margin-bottom: 20px;">Dear ${recipientName},</p>
+            
+            <p style="margin-bottom: 20px;">Welcome to the NHIS Portal! Your account has been successfully created with ${role} access.</p>
+            
+            <div style="background: white; padding: 25px; border-radius: 8px; border-left: 4px solid #dc2626; margin: 25px 0;">
+              <h3 style="margin: 0 0 15px 0; color: #1f2937;">Your Login Credentials</h3>
+              <p style="margin: 10px 0; font-weight: bold;">Login URL: <a href="${loginUrl}" style="color: #059669;">${loginUrl}</a></p>
+              <p style="margin: 10px 0; font-weight: bold;">Temporary Password: <span style="color: #dc2626; font-family: monospace; background: #fee2e2; padding: 2px 6px; border-radius: 4px;">${temporaryPassword}</span></p>
+              <p style="margin: 15px 0 0 0; color: #dc2626; font-weight: bold; font-size: 14px;">⚠️ You must change this password on your first login for security reasons.</p>
+            </div>
+            
+            <div style="background: white; padding: 25px; border-radius: 8px; margin: 25px 0;">
+              <h3 style="margin: 0 0 15px 0; color: #1f2937;">Getting Started</h3>
+              <ol style="color: #1f2937; padding-left: 20px;">
+                <li style="margin-bottom: 10px;">Click the login button below</li>
+                <li style="margin-bottom: 10px;">Enter your email and temporary password</li>
+                <li style="margin-bottom: 10px;"><strong>Change your password immediately when prompted</strong></li>
+                <li style="margin-bottom: 10px;">Complete your profile setup</li>
+                <li style="margin-bottom: 10px;">Explore the dashboard and available features</li>
+              </ol>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${loginUrl}" 
+                 style="background: #1f2937; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+                Login to Portal
+              </a>
+            </div>
+            
+            <div style="background: #fef3c7; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 25px 0;">
+              <h4 style="margin: 0 0 10px 0; color: #92400e;">Security Notice</h4>
+              <p style="margin: 0; color: #92400e; font-size: 14px;">
+                This is a temporary password. For your security, you will be required to create a new password during your first login. 
+                Please keep your credentials confidential and do not share them with anyone.
+              </p>
             </div>
             
             <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px; text-align: center; color: #6b7280; font-size: 14px;">

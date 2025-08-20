@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -24,10 +25,14 @@ export function LoginForm() {
     setError("")
     setLoading(true)
 
-    const success = await login(email, password)
+    const result = await login(email, password)
 
-    if (success) {
-      router.push("/dashboard")
+    if (result.success) {
+      if (result.requiresPasswordChange) {
+        router.push("/change-password?required=true")
+      } else {
+        router.push("/dashboard")
+      }
     } else {
       setError("Invalid email or password")
     }
@@ -103,9 +108,9 @@ export function LoginForm() {
             </Button>
 
             <div className="flex items-center justify-between text-sm">
-              <button type="button" className="text-[#104D7F] hover:text-[#003C06] font-medium">
+              <Link href="/forgot-password" className="text-[#104D7F] hover:text-[#003C06] font-medium">
                 Forgot Password?
-              </button>
+              </Link>
               <button type="button" className="text-gray-600 hover:text-gray-800">
                 Need Help?
               </button>

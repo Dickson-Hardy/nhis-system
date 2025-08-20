@@ -4,7 +4,7 @@ import { claims, facilities, tpas, batches } from "@/lib/db/schema"
 import { eq, and, desc, asc, ilike, or } from "drizzle-orm"
 import { verifyToken } from "@/lib/auth"
 
-// Helper function to parse DD/MM/YYYY dates
+// Helper function to parse DD/MM/YYYY dates with better error handling
 function parseDate(dateString: string | null | undefined): string | null {
   if (!dateString || dateString.trim() === '') return null
   
@@ -15,12 +15,26 @@ function parseDate(dateString: string | null | undefined): string | null {
     return trimmed
   }
   
+  // Handle malformed dates that start with + and have invalid year values
+  // These appear to be corrupted Excel date formats
+  if (trimmed.match(/^\+0\d{5}-\d{2}-\d{2}$/)) {
+    console.warn(`Skipping malformed date: ${trimmed}`)
+    return null
+  }
+  
   // Parse DD/MM/YYYY format
   const parts = trimmed.split('/')
   if (parts.length === 3) {
     const day = parts[0].padStart(2, '0')
     const month = parts[1].padStart(2, '0')
     const year = parts[2]
+    
+    // Validate year is reasonable (between 1900 and 2100)
+    const yearNum = parseInt(year)
+    if (yearNum < 1900 || yearNum > 2100) {
+      console.warn(`Invalid year in date: ${trimmed}`)
+      return null
+    }
     
     // Validate the parsed date
     const date = new Date(`${year}-${month}-${day}`)
@@ -31,17 +45,54 @@ function parseDate(dateString: string | null | undefined): string | null {
     }
   }
   
-  // Try to parse other formats
+  // Try to parse other formats, but be more careful
   try {
-    const parsedDate = new Date(trimmed)
-    if (!isNaN(parsedDate.getTime())) {
-      return parsedDate.toISOString().split('T')[0]
+    // Check if it looks like a reasonable date string
+    if (trimmed.match(/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/)) {
+      const parsedDate = new Date(trimmed)
+      if (!isNaN(parsedDate.getTime())) {
+        const year = parsedDate.getFullYear()
+        if (year >= 1900 && year <= 2100) {
+          return parsedDate.toISOString().split('T')[0]
+        }
+      }
     }
   } catch (e) {
     // Ignore parsing errors
   }
   
+  console.warn(`Could not parse date: ${trimmed}`)
   return null
+}
+
+// Helper function to safely parse integers
+function safeParseInt(value: string | null | undefined): number | null {
+  if (!value || value.trim() === '') return null
+  
+  const trimmed = value.trim()
+  const parsed = parseInt(trimmed)
+  
+  if (isNaN(parsed)) {
+    console.warn(`Could not parse integer: ${trimmed}`)
+    return null
+  }
+  
+  return parsed
+}
+
+// Helper function to safely parse floats
+function safeParseFloat(value: string | null | undefined): string | null {
+  if (!value || value.trim() === '') return null
+  
+  const trimmed = value.trim()
+  const parsed = parseFloat(trimmed)
+  
+  if (isNaN(parsed)) {
+    console.warn(`Could not parse float: ${trimmed}`)
+    return null
+  }
+  
+  return parsed.toString()
 }
 
 // GET /api/claims - Fetch claims with filtering and pagination
@@ -281,7 +332,7 @@ export async function POST(request: NextRequest) {
         dateOfAdmission: parseDate(body.dateOfAdmission),
         beneficiaryName: body.beneficiaryName,
         dateOfBirth: parseDate(body.dateOfBirth),
-        age: body.age ? parseInt(body.age) : null,
+        age: safeParseInt(body.age),
         address: body.address,
         phoneNumber: body.phoneNumber,
         nin: body.nin,
@@ -292,20 +343,20 @@ export async function POST(request: NextRequest) {
         primaryDiagnosis: body.primaryDiagnosis,
         secondaryDiagnosis: body.secondaryDiagnosis,
         treatmentProcedure: body.treatmentProcedure,
-        quantity: body.quantity ? parseInt(body.quantity) : null,
-        cost: body.cost ? parseFloat(body.cost) : null,
+        quantity: safeParseInt(body.quantity),
+        cost: safeParseFloat(body.cost),
         
         // Submission Information
         dateOfClaimSubmission: parseDate(body.dateOfClaimSubmission),
         monthOfSubmission: body.monthOfSubmission,
         
         // Cost Breakdown
-        costOfInvestigation: body.costOfInvestigation ? parseFloat(body.costOfInvestigation) : null,
-        costOfProcedure: body.costOfProcedure ? parseFloat(body.costOfProcedure) : null,
-        costOfMedication: body.costOfMedication ? parseFloat(body.costOfMedication) : null,
-        costOfOtherServices: body.costOfOtherServices ? parseFloat(body.costOfOtherServices) : null,
-        totalCostOfCare: body.totalCostOfCare ? parseFloat(body.totalCostOfCare) : null,
-        approvedCostOfCare: body.approvedCostOfCare ? parseFloat(body.approvedCostOfCare) : null,
+        costOfInvestigation: safeParseFloat(body.costOfInvestigation),
+        costOfProcedure: safeParseFloat(body.costOfProcedure),
+        costOfMedication: safeParseFloat(body.costOfMedication),
+        costOfOtherServices: safeParseFloat(body.costOfOtherServices),
+        totalCostOfCare: safeParseFloat(body.totalCostOfCare),
+        approvedCostOfCare: safeParseFloat(body.approvedCostOfCare),
         
         // Decision and Payment - decision should be null for new claims, status handles workflow
         decision: "pending", // Default to pending for new claims

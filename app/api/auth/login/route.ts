@@ -42,7 +42,9 @@ export async function POST(request: NextRequest) {
         email: user.email,
         name: user.name,
         role: user.role,
+        isTemporaryPassword: user.isTemporaryPassword,
       },
+      requiresPasswordChange: user.isTemporaryPassword,
     })
   } catch (error) {
     console.error("Login error:", error)

@@ -11,6 +11,10 @@ export const users = pgTable("users", {
   tpaId: integer("tpa_id").references(() => tpas.id),
   facilityId: integer("facility_id").references(() => facilities.id),
   isActive: boolean("is_active").default(true),
+  isTemporaryPassword: boolean("is_temporary_password").default(false),
+  passwordResetToken: varchar("password_reset_token", { length: 255 }),
+  passwordResetExpires: timestamp("password_reset_expires"),
+  lastPasswordChange: timestamp("last_password_change"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 })

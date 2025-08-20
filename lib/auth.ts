@@ -4,6 +4,7 @@ import { cookies } from "next/headers"
 import { db } from "./db"
 import { users } from "./db/schema"
 import { eq } from "drizzle-orm"
+import crypto from "crypto"
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key"
 
@@ -14,6 +15,8 @@ export interface User {
   role: "tpa" | "facility" | "nhis_admin"
   tpaId?: number | null
   facilityId?: number | null
+  isTemporaryPassword?: boolean
+  lastPasswordChange?: Date | null
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -22,6 +25,20 @@ export async function hashPassword(password: string): Promise<string> {
 
 export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
   return bcrypt.compare(password, hashedPassword)
+}
+
+export function generatePasswordResetToken(): string {
+  return crypto.randomBytes(32).toString("hex")
+}
+
+export async function generateTemporaryPassword(): Promise<string> {
+  // Generate a secure temporary password
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*"
+  let password = ""
+  for (let i = 0; i < 12; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return password
 }
 
 export function generateToken(user: User): string {
@@ -69,6 +86,8 @@ export async function getCurrentUser(): Promise<User | null> {
     role: dbUser[0].role as "tpa" | "facility" | "nhis_admin",
     tpaId: dbUser[0].tpaId,
     facilityId: dbUser[0].facilityId,
+    isTemporaryPassword: dbUser[0].isTemporaryPassword || false,
+    lastPasswordChange: dbUser[0].lastPasswordChange,
   }
 }
 
@@ -87,5 +106,7 @@ export async function authenticateUser(email: string, password: string): Promise
     role: user[0].role as "tpa" | "facility" | "nhis_admin",
     tpaId: user[0].tpaId,
     facilityId: user[0].facilityId,
+    isTemporaryPassword: user[0].isTemporaryPassword || false,
+    lastPasswordChange: user[0].lastPasswordChange,
   }
 }
