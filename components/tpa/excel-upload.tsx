@@ -7,7 +7,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
+import FacilitySelector from "@/components/tpa/facility-selector"
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, Building2 } from "lucide-react"
 import { useDropzone } from "react-dropzone"
 import * as XLSX from 'xlsx'
 
@@ -91,6 +94,11 @@ export function ExcelUpload({ batchId, batchNumber, onComplete }: ExcelUploadPro
     uploadProgress: 0,
     step: "upload",
   })
+
+  // Facility management state
+  const [defaultFacilityId, setDefaultFacilityId] = useState<number | undefined>()
+  const [overrideFacilities, setOverrideFacilities] = useState(false)
+  const [useAutoCreateFacilities, setUseAutoCreateFacilities] = useState(true)
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0]
@@ -259,6 +267,17 @@ export function ExcelUpload({ batchId, batchNumber, onComplete }: ExcelUploadPro
       let errorCount = 0
       let batchSummary: any = null
       
+      // Prepare claims data with facility options
+      const claimsToUpload = uploadState.validRows.map(row => ({
+        ...row,
+        // Override facility if selected
+        facilityId: overrideFacilities ? defaultFacilityId : undefined,
+        // Flag to auto-create facilities from Excel data
+        autoCreateFacilities: useAutoCreateFacilities,
+        // Default facility fallback
+        defaultFacilityId: defaultFacilityId
+      }))
+      
       // First, try bulk upload with automatic batch creation
       try {
         const response = await fetch('/api/claims/bulk-upload', {
@@ -268,7 +287,7 @@ export function ExcelUpload({ batchId, batchNumber, onComplete }: ExcelUploadPro
           },
           credentials: 'include',
           body: JSON.stringify({
-            claims: uploadState.validRows,
+            claims: claimsToUpload,
             autoCreateBatches: true, // Enable automatic batch creation
             fallbackBatchId: batchId, // Use provided batchId as fallback if no batch numbers
           }),
@@ -452,6 +471,66 @@ export function ExcelUpload({ batchId, batchNumber, onComplete }: ExcelUploadPro
                 Download Excel Template
               </Button>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card border-border shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-card-foreground flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Facility Configuration
+            </CardTitle>
+            <CardDescription>
+              Configure how facilities should be handled during upload
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="auto-create-facilities" 
+                  checked={useAutoCreateFacilities}
+                  onCheckedChange={(checked) => setUseAutoCreateFacilities(checked === true)}
+                />
+                <Label htmlFor="auto-create-facilities" className="text-sm">
+                  Automatically create facilities from Excel data if they don't exist
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="override-facilities" 
+                  checked={overrideFacilities}
+                  onCheckedChange={(checked) => setOverrideFacilities(checked === true)}
+                />
+                <Label htmlFor="override-facilities" className="text-sm">
+                  Use a single facility for all claims (override Excel facility data)
+                </Label>
+              </div>
+
+              {(overrideFacilities || !useAutoCreateFacilities) && (
+                <div className="ml-6 space-y-2">
+                  <Label className="text-sm font-medium">
+                    {overrideFacilities ? "Facility for all claims:" : "Default facility for missing data:"}
+                  </Label>
+                  <FacilitySelector
+                    selectedFacilityId={defaultFacilityId}
+                    onSelect={setDefaultFacilityId}
+                    placeholder="Select a facility..."
+                  />
+                </div>
+              )}
+            </div>
+
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-sm">
+                {useAutoCreateFacilities 
+                  ? "Facilities will be automatically created if they don't exist in the system." 
+                  : "Claims with missing or invalid facility data will use the default facility above."
+                }
+              </AlertDescription>
+            </Alert>
           </CardContent>
         </Card>
 

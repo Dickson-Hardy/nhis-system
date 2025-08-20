@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { claims, facilities, tpas, batches } from "@/lib/db/schema"
 import { eq, and, desc, asc, ilike, or } from "drizzle-orm"
 import { verifyToken } from "@/lib/auth"
+import { resolveFacilityId } from "@/lib/facility-resolver"
 
 // Helper function to parse DD/MM/YYYY dates with better error handling
 function parseDate(dateString: string | null | undefined): string | null {
@@ -262,37 +263,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Ensure we have a valid facility ID
-    let facilityId = null
-    if (body.facilityId) {
-      facilityId = parseInt(body.facilityId)
-    } else if (user.facilityId) {
-      facilityId = user.facilityId
-    } else if (body.facilityName) {
-      // Try to find facility by name
-      const facility = await db.select().from(facilities).where(eq(facilities.name, body.facilityName)).limit(1)
-      if (facility.length > 0) {
-        facilityId = facility[0].id
-      } else {
-        // Create new facility if it doesn't exist
-        const newFacility = await db
-          .insert(facilities)
-          .values({
-            name: body.facilityName,
-            code: body.facilityCode || `FAC-${Date.now()}`,
-            state: body.facilityState || "Unknown",
-            address: "",
-            tpaId: user.tpaId,
-          })
-          .returning()
-        facilityId = newFacility[0].id
+    // Ensure we have a valid facility ID using the facility resolver
+    try {
+      const facilityResult = await resolveFacilityId(
+        user.tpaId!,
+        {
+          facilityId: body.facilityId ? parseInt(body.facilityId) : undefined,
+          facilityName: body.facilityName,
+          facilityCode: body.facilityCode,
+          facilityState: body.facilityState
+        },
+        user.facilityId,
+        true // Auto-create facility if needed
+      )
+      
+      var facilityId = facilityResult.facilityId
+      
+      if (facilityResult.isNewFacility) {
+        console.log(`Created new facility: ${facilityResult.facility.name} for claim`)
       }
-    } else {
-      facilityId = 1 // Default facility ID
-    }
-
-    if (!facilityId) {
-      return NextResponse.json({ error: "Facility ID is required" }, { status: 400 })
+    } catch (error) {
+      console.error(`Error resolving facility: ${error}`)
+      return NextResponse.json({ error: `Failed to resolve facility: ${error instanceof Error ? error.message : 'Unknown error'}` }, { status: 400 })
     }
 
     // Get batch information to validate and update

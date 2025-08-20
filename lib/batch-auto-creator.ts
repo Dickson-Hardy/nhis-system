@@ -3,6 +3,7 @@
 import { db } from "@/lib/db"
 import { batches, claims } from "@/lib/db/schema"
 import { eq, and } from "drizzle-orm"
+import { getDefaultFacilityForTpa } from "@/lib/facility-resolver"
 
 export interface BatchCreationResult {
   batchId: number
@@ -20,14 +21,24 @@ export interface ExcelRowWithBatch {
 
 /**
  * Groups Excel rows by batch number and ensures batches exist
+ * facilityId parameter is now optional - will use TPA's default facility if not provided
  */
 export async function groupAndCreateBatches(
   excelRows: ExcelRowWithBatch[],
   tpaId: number,
-  facilityId: number,
+  facilityId: number | null = null,
   createdBy: number
 ): Promise<Map<string, BatchCreationResult>> {
   const batchGroups = new Map<string, BatchCreationResult>()
+  
+  // If no facilityId provided, try to get default facility for TPA
+  let resolvedFacilityId = facilityId
+  if (!resolvedFacilityId) {
+    resolvedFacilityId = await getDefaultFacilityForTpa(tpaId)
+    if (!resolvedFacilityId) {
+      throw new Error(`No facilities found for TPA ${tpaId}. Please create a facility first.`)
+    }
+  }
   
   // Get unique batch numbers from the data
   const uniqueBatchNumbers = [...new Set(excelRows.map(row => row.batchNumber).filter(Boolean))]
@@ -66,7 +77,7 @@ export async function groupAndCreateBatches(
             batchNumber,
             tpaId,
             totalClaims: 0,
-            totalAmount: "0",
+            totalAmount: "0.00",
             status: "draft",
             createdBy,
             createdAt: new Date(),
@@ -111,7 +122,6 @@ export async function updateBatchTotals(batchNumber: string): Promise<void> {
       .set({
         totalClaims,
         totalAmount: totalAmount.toString(),
-        updatedAt: new Date(),
       })
       .where(eq(batches.batchNumber, batchNumber))
       

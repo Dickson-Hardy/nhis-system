@@ -71,24 +71,35 @@ async function checkAndFixTpaUsers() {
       // Get facilities for reference
       const facilities = await sql`SELECT id, name, code, contact_email FROM facilities ORDER BY id`;
       
-      // Try to fix based on email patterns
+      // Try to fix based on email patterns or prompt for manual assignment
       for (const user of facilityUsersWithoutFacilityId) {
         let facilityId = null;
         
-        // Match based on email domain or address
-        if (user.email.includes('luth.edu.ng')) {
-          facilityId = 1; // Lagos University Teaching Hospital
-        } else if (user.email.includes('upth.edu.ng')) {
-          facilityId = 3; // University of Port Harcourt Teaching Hospital  
-        } else if (user.email.includes('uch-ibadan.org.ng')) {
-          facilityId = 4; // University College Hospital Ibadan
-        }
+        // Try to match based on email domain to existing facilities
+        const emailDomain = user.email.split('@')[1];
         
-        if (facilityId) {
-          console.log(`🔧 Fixing facility user ${user.email} - assigning facility_id = ${facilityId}`);
+        // Look for facilities with matching domains in their contact email or name
+        const matchingFacility = facilities.find(facility => {
+          if (facility.contact_email && facility.contact_email.includes(emailDomain)) {
+            return true;
+          }
+          
+          // Check if facility name contains keywords from email domain
+          const domainKeywords = emailDomain.split('.').filter(part => part.length > 2);
+          return domainKeywords.some(keyword => 
+            facility.name.toLowerCase().includes(keyword.toLowerCase())
+          );
+        });
+        
+        if (matchingFacility) {
+          facilityId = matchingFacility.id;
+          console.log(`🔧 Fixing facility user ${user.email} - assigning facility_id = ${facilityId} (${matchingFacility.name})`);
           await sql`UPDATE users SET facility_id = ${facilityId} WHERE id = ${user.id}`;
         } else {
           console.log(`⚠️  Could not determine facility for user: ${user.email}`);
+          console.log(`   Available facilities:`);
+          facilities.forEach(f => console.log(`     - ID: ${f.id}, Name: ${f.name}, Code: ${f.code}`));
+          console.log(`   Please manually assign facility_id for this user or create a new facility`);
         }
       }
     } else {

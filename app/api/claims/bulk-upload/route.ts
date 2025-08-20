@@ -10,6 +10,7 @@ import {
   generateBatchSummary,
   type ExcelRowWithBatch 
 } from "@/lib/batch-auto-creator"
+import { resolveFacilityId } from "@/lib/facility-resolver"
 
 // Helper function to parse DD/MM/YYYY dates with better error handling
 function parseDate(dateString: string | null | undefined): string | null {
@@ -145,7 +146,7 @@ export async function POST(request: NextRequest) {
         const batchGroups = await groupAndCreateBatches(
           claimsData as ExcelRowWithBatch[],
           user.tpaId,
-          user.facilityId || 1, // Default facility if not set
+          user.facilityId, // Pass user's facility ID, function will handle null case
           user.id
         )
 
@@ -173,57 +174,29 @@ export async function POST(request: NextRequest) {
                 continue // Skip this claim
               }
 
-              // Ensure we have a valid facility ID
-              let facilityId = user.facilityId || null
-              if (!facilityId && row.facilityName) {
-                // Try to find facility by name first
-                const facility = await db.select().from(facilities).where(eq(facilities.name, row.facilityName)).limit(1)
-                if (facility.length > 0) {
-                  facilityId = facility[0].id
-                } else {
-                  // Try to find facility by code if provided
-                  if (row.facilityCode) {
-                    const facilityByCode = await db.select().from(facilities).where(eq(facilities.code, row.facilityCode)).limit(1)
-                    if (facilityByCode.length > 0) {
-                      facilityId = facilityByCode[0].id
-                    }
-                  }
-                  
-                  // If still no facility found, create a new one
-                  if (!facilityId) {
-                    try {
-                      const newFacility = await db
-                        .insert(facilities)
-                        .values({
-                          name: row.facilityName,
-                          code: row.facilityCode || `FAC-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                          state: row.facilityState || "Unknown",
-                          address: "",
-                          tpaId: user.tpaId,
-                        })
-                        .returning()
-                      facilityId = newFacility[0].id
-                    } catch (facilityError) {
-                      console.error(`Error creating facility: ${facilityError}`)
-                      // If facility creation fails, try to use existing facility with similar name
-                      const similarFacility = await db
-                        .select()
-                        .from(facilities)
-                        .where(ilike(facilities.name, `%${row.facilityName.split(' ')[0]}%`))
-                        .limit(1)
-                      if (similarFacility.length > 0) {
-                        facilityId = similarFacility[0].id
-                        console.warn(`Using existing facility with similar name: ${similarFacility[0].name}`)
-                      } else {
-                        facilityId = 1 // Default facility ID as last resort
-                      }
-                    }
-                  }
+              // Resolve facility ID using the intelligent facility resolver
+              let facilityId: number
+              try {
+                const facilityResult = await resolveFacilityId(
+                  user.tpaId!,
+                  {
+                    facilityName: row.facilityName,
+                    facilityCode: row.facilityCode,
+                    facilityState: row.facilityState
+                  },
+                  user.facilityId,
+                  true // Auto-create facility if needed
+                )
+                
+                facilityId = facilityResult.facilityId
+                
+                if (facilityResult.isNewFacility) {
+                  console.log(`Created new facility: ${facilityResult.facility.name} for bulk upload`)
                 }
-              }
-
-              if (!facilityId) {
-                facilityId = 1 // Default facility ID
+              } catch (error) {
+                console.error(`Error resolving facility for claim ${row.uniqueClaimId}: ${error}`)
+                errorCount++
+                continue // Skip this claim
               }
 
               await db.insert(claims).values({
@@ -306,8 +279,26 @@ export async function POST(request: NextRequest) {
       // Original individual processing (fallback)
       for (const row of claimsData) {
         try {
-          // Use fallback batch info if provided
-          let facilityId = user.facilityId || 1
+          // Use facility resolver for individual claims too
+          let facilityId: number
+          try {
+            const facilityResult = await resolveFacilityId(
+              user.tpaId!,
+              {
+                facilityName: row.facilityName,
+                facilityCode: row.facilityCode,
+                facilityState: row.facilityState
+              },
+              user.facilityId,
+              true // Auto-create facility if needed
+            )
+            
+            facilityId = facilityResult.facilityId
+          } catch (error) {
+            console.error(`Error resolving facility for claim ${row.uniqueClaimId}: ${error}`)
+            errorCount++
+            continue // Skip this claim
+          }
           
           await db.insert(claims).values({
             uniqueBeneficiaryId: row.uniqueBeneficiaryId,

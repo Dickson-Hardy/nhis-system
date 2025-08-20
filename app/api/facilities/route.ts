@@ -6,12 +6,12 @@ import { verifyToken } from "@/lib/auth"
 // GET /api/facilities - Fetch facilities with filtering and pagination
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get("token")?.value
+    const token = request.cookies.get("auth-token")?.value
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const user = await verifyToken(token)
+    const user = verifyToken(token)
     if (!user) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
     }
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     const whereConditions: any[] = []
 
     // Role-based filtering
-    if (user.role === "tpa") {
+    if (user.role === "tpa" && user.tpaId) {
       whereConditions.push(eq(facilities.tpaId, user.tpaId))
     }
 
@@ -81,9 +81,7 @@ export async function GET(request: NextRequest) {
       .leftJoin(tpas, eq(facilities.tpaId, tpas.id))
       .where(whereClause)
       .orderBy(
-        sortOrder === "desc"
-          ? desc(facilities[sortBy as keyof typeof facilities])
-          : asc(facilities[sortBy as keyof typeof facilities]),
+        sortOrder === "desc" ? desc(facilities.createdAt) : asc(facilities.createdAt)
       )
       .limit(limit)
       .offset(offset)
@@ -109,32 +107,72 @@ export async function GET(request: NextRequest) {
 // POST /api/facilities - Create new facility
 export async function POST(request: NextRequest) {
   try {
-    const token = request.cookies.get("token")?.value
+    const token = request.cookies.get("auth-token")?.value
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const user = await verifyToken(token)
-    if (!user || user.role !== "nhis_admin") {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 })
+    const user = verifyToken(token)
+    if (!user) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+    }
+
+    // Allow both TPA users and admins to create facilities
+    if (user.role !== "nhis_admin" && user.role !== "tpa") {
+      return NextResponse.json({ error: "Access denied - Admin or TPA role required" }, { status: 403 })
     }
 
     const body = await request.json()
     const { name, code, state, address, contactEmail, contactPhone, tpaId } = body
 
     // Validate required fields
-    if (!name || !code || !state || !tpaId) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    if (!name || !state) {
+      return NextResponse.json({ error: "Name and state are required" }, { status: 400 })
     }
 
+    // Determine TPA ID based on user role
+    let finalTpaId = tpaId
+    if (user.role === "tpa") {
+      // TPA users can only create facilities for their own TPA
+      finalTpaId = user.tpaId
+      if (!finalTpaId) {
+        return NextResponse.json({ error: "TPA ID is required for TPA users" }, { status: 400 })
+      }
+    } else if (user.role === "nhis_admin") {
+      // Admins can create facilities for any TPA
+      if (!tpaId) {
+        return NextResponse.json({ error: "TPA ID is required for admin users" }, { status: 400 })
+      }
+      finalTpaId = tpaId
+    }
+
+    if (!finalTpaId) {
+      return NextResponse.json({ error: "TPA ID is required" }, { status: 400 })
+    }
+
+    // Generate facility code if not provided
+    const facilityCode = code || `FAC-${finalTpaId}-${Date.now().toString().slice(-6)}`
+
     // Check if facility code already exists
-    const existingFacility = await db.select().from(facilities).where(eq(facilities.code, code))
+    const existingFacility = await db.select().from(facilities).where(eq(facilities.code, facilityCode))
     if (existingFacility.length > 0) {
       return NextResponse.json({ error: "Facility code already exists" }, { status: 400 })
     }
 
+    // Check if facility with same name exists for this TPA
+    const existingFacilityByName = await db
+      .select()
+      .from(facilities)
+      .where(and(eq(facilities.name, name), eq(facilities.tpaId, finalTpaId)))
+    if (existingFacilityByName.length > 0) {
+      return NextResponse.json({ 
+        error: "Facility with this name already exists for this TPA",
+        existingFacility: existingFacilityByName[0]
+      }, { status: 409 })
+    }
+
     // Verify TPA exists
-    const tpaExists = await db.select().from(tpas).where(eq(tpas.id, tpaId))
+    const tpaExists = await db.select().from(tpas).where(eq(tpas.id, finalTpaId))
     if (tpaExists.length === 0) {
       return NextResponse.json({ error: "TPA not found" }, { status: 400 })
     }
@@ -143,12 +181,12 @@ export async function POST(request: NextRequest) {
       .insert(facilities)
       .values({
         name,
-        code,
+        code: facilityCode,
         state,
-        address,
-        contactEmail,
-        contactPhone,
-        tpaId,
+        address: address || "",
+        contactEmail: contactEmail || "",
+        contactPhone: contactPhone || "",
+        tpaId: finalTpaId,
         isActive: true,
         createdAt: new Date(),
       })

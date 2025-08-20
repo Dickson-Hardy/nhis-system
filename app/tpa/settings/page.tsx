@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { FacilityManagement } from "@/components/tpa/facility-management"
 import { 
   User,
   Building2,
@@ -14,7 +15,8 @@ import {
   Mail,
   Phone,
   MapPin,
-  Save
+  Save,
+  Hospital
 } from "lucide-react"
 
 export default function TPASettingsPage() {
@@ -32,8 +34,9 @@ export default function TPASettingsPage() {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="profile">TPA Profile</TabsTrigger>
+          <TabsTrigger value="facilities">Facilities</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="preferences">Preferences</TabsTrigger>
@@ -104,6 +107,23 @@ export default function TPASettingsPage() {
                   <Input id="admin-role" defaultValue="TPA Administrator" disabled />
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Facilities Management */}
+        <TabsContent value="facilities" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Hospital className="h-5 w-5" />
+                Healthcare Facilities
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FacilityManagement 
+                userRole="tpa"
+              />
             </CardContent>
           </Card>
         </TabsContent>
