@@ -99,6 +99,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.9",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22",
     "@types/pg": "latest",
     "@types/react": "^19",

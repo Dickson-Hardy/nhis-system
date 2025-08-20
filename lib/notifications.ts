@@ -219,12 +219,13 @@ export async function sendNotification({
       case "batch_submitted":
       case "batch_approved":
       case "batch_rejected":
+        const batchStatus = type === "batch_approved" ? "approved" : "rejected"
         await emailService.sendBatchStatusNotification(recipientEmail, data.userName || "User", {
           batchNumber: data.batchNumber,
           tpaName: data.tpaName || "TPA",
           totalClaims: data.totalClaims || 0,
           totalAmount: data.totalAmount || 0,
-          status: type.replace("batch_", ""),
+          status: batchStatus as "approved" | "rejected",
           submittedDate: new Date().toLocaleDateString(),
           reason: data.reason,
           remarks: data.remarks,
