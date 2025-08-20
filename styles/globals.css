@@ -1,0 +1,390 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* NHIA Brand Colors - Based on Brand Guidelines */
+  --nhia-primary: 221 100% 24%;        /* Deep NHIA Blue #003d7a */
+  --nhia-primary-light: 221 100% 35%;   /* Lighter Blue #0056b3 */
+  --nhia-secondary: 142 76% 36%;        /* NHIA Green #16a085 */
+  --nhia-secondary-light: 142 76% 45%;  /* Light Green #1abc9c */
+  --nhia-accent: 197 71% 52%;           /* Medical Blue #2196f3 */
+  --nhia-success: 142 76% 36%;          /* Success Green #16a085 */
+  --nhia-warning: 45 93% 47%;           /* Warning Orange #f39c12 */
+  --nhia-error: 354 70% 54%;            /* Error Red #e74c3c */
+  
+  /* Semantic Colors */
+  --background: 0 0% 100%;              /* Pure White */
+  --foreground: 222 47% 11%;            /* Dark Gray #1a1f2e */
+  --card: 0 0% 100%;                    /* White Cards */
+  --card-foreground: 222 47% 11%;      /* Dark Text */
+  --popover: 0 0% 100%;                 /* White Popovers */
+  --popover-foreground: 222 47% 11%;   /* Dark Text */
+  
+  /* Primary Brand Colors */
+  --primary: var(--nhia-primary);
+  --primary-foreground: 0 0% 100%;     /* White on Primary */
+  --secondary: 210 40% 98%;             /* Very Light Gray */
+  --secondary-foreground: var(--nhia-primary);
+  
+  /* Interface Colors */
+  --muted: 210 40% 96%;                 /* Light Background */
+  --muted-foreground: 215 25% 27%;     /* Muted Text */
+  --accent: var(--nhia-secondary);
+  --accent-foreground: 0 0% 100%;      /* White on Accent */
+  
+  /* Status Colors */
+  --destructive: var(--nhia-error);
+  --destructive-foreground: 0 0% 100%;
+  --success: var(--nhia-success);
+  --success-foreground: 0 0% 100%;
+  --warning: var(--nhia-warning);
+  --warning-foreground: 0 0% 100%;
+  
+  /* Border and Input Colors */
+  --border: 220 13% 91%;                /* Light Border */
+  --input: 220 13% 91%;                 /* Input Border */
+  --ring: var(--nhia-primary);          /* Focus Ring */
+  
+  /* Chart Colors - Medical/Healthcare Theme */
+  --chart-1: var(--nhia-primary);       /* Primary Blue */
+  --chart-2: var(--nhia-secondary);     /* Primary Green */
+  --chart-3: var(--nhia-accent);        /* Medical Blue */
+  --chart-4: var(--nhia-warning);       /* Warning Orange */
+  --chart-5: var(--nhia-error);         /* Error Red */
+  
+  /* Layout */
+  --radius: 0.5rem;                     /* Consistent border radius */
+  
+  /* Sidebar Colors */
+  --sidebar: var(--nhia-primary);
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-primary: var(--nhia-secondary);
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 221 100% 30%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 221 100% 20%;
+  --sidebar-ring: var(--nhia-secondary);
+}
+
+.dark {
+  /* Dark Mode - Maintains NHIA Branding */
+  --background: 222 47% 11%;            /* Dark Background */
+  --foreground: 213 31% 91%;            /* Light Text */
+  --card: 222 47% 11%;                  /* Dark Cards */
+  --card-foreground: 213 31% 91%;      /* Light Text */
+  --popover: 222 47% 11%;               /* Dark Popovers */
+  --popover-foreground: 213 31% 91%;   /* Light Text */
+  
+  --primary: var(--nhia-primary-light); /* Lighter primary for contrast */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 222 47% 15%;             /* Dark Secondary */
+  --secondary-foreground: 213 31% 91%;
+  
+  --muted: 222 47% 15%;                 /* Dark Muted */
+  --muted-foreground: 215 25% 65%;     /* Light Muted Text */
+  --accent: var(--nhia-secondary-light);
+  --accent-foreground: 222 47% 11%;
+  
+  --destructive: var(--nhia-error);
+  --destructive-foreground: 0 0% 100%;
+  --success: var(--nhia-success);
+  --success-foreground: 0 0% 100%;
+  --warning: var(--nhia-warning);
+  --warning-foreground: 0 0% 100%;
+  
+  --border: 222 47% 15%;                /* Dark Border */
+  --input: 222 47% 15%;                 /* Dark Input */
+  --ring: var(--nhia-secondary-light);  /* Accent Focus Ring */
+  
+  /* Dark Mode Charts */
+  --chart-1: var(--nhia-primary-light);
+  --chart-2: var(--nhia-secondary-light);
+  --chart-3: var(--nhia-accent);
+  --chart-4: var(--nhia-warning);
+  --chart-5: var(--nhia-error);
+  
+  /* Dark Sidebar */
+  --sidebar: 222 47% 4%;                /* Very Dark Sidebar */
+  --sidebar-foreground: 213 31% 91%;
+  --sidebar-primary: var(--nhia-secondary-light);
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 222 47% 15%;
+  --sidebar-accent-foreground: 213 31% 91%;
+  --sidebar-border: 222 47% 15%;
+  --sidebar-ring: var(--nhia-secondary-light);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  /* Typography Improvements */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+  
+  h1 { @apply text-4xl lg:text-5xl; }
+  h2 { @apply text-3xl lg:text-4xl; }
+  h3 { @apply text-2xl lg:text-3xl; }
+  h4 { @apply text-xl lg:text-2xl; }
+  h5 { @apply text-lg lg:text-xl; }
+  h6 { @apply text-base lg:text-lg; }
+}
+
+@layer components {
+  /* NHIA Healthcare UI Components */
+  .healthcare-card {
+    @apply bg-card text-card-foreground shadow-sm border rounded-lg p-6;
+    @apply hover:shadow-md transition-shadow duration-200;
+  }
+  
+  .medical-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .medical-badge-success {
+    @apply medical-badge bg-green-100 text-green-800;
+  }
+  
+  .medical-badge-warning {
+    @apply medical-badge bg-yellow-100 text-yellow-800;
+  }
+  
+  .medical-badge-error {
+    @apply medical-badge bg-red-100 text-red-800;
+  }
+  
+  .medical-badge-info {
+    @apply medical-badge bg-blue-100 text-blue-800;
+  }
+  
+  /* Status Indicators */
+  .status-approved {
+    @apply text-green-700 bg-green-50 border-green-200;
+  }
+  
+  .status-pending {
+    @apply text-yellow-700 bg-yellow-50 border-yellow-200;
+  }
+  
+  .status-rejected {
+    @apply text-red-700 bg-red-50 border-red-200;
+  }
+  
+  .status-submitted {
+    @apply text-blue-700 bg-blue-50 border-blue-200;
+  }
+  
+  /* Enhanced Form Elements */
+  .form-section {
+    @apply space-y-6 p-6 bg-card rounded-lg border;
+  }
+  
+  .form-section-header {
+    @apply flex items-center space-x-2 pb-4 border-b border-border;
+  }
+  
+  .form-section-title {
+    @apply text-lg font-semibold text-foreground;
+  }
+  
+  .form-field {
+    @apply space-y-2;
+  }
+  
+  .form-label {
+    @apply text-sm font-medium text-foreground;
+  }
+  
+  .form-input {
+    @apply w-full px-3 py-2 border border-input rounded-md;
+    @apply focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent;
+    @apply bg-background text-foreground placeholder:text-muted-foreground;
+  }
+  
+  .form-textarea {
+    @apply form-input min-h-[80px] resize-y;
+  }
+  
+  .form-select {
+    @apply form-input pr-8 cursor-pointer;
+  }
+  
+  /* Action Buttons */
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90;
+    @apply px-4 py-2 rounded-md font-medium text-sm;
+    @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+    @apply transition-colors duration-200;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
+    @apply px-4 py-2 rounded-md font-medium text-sm;
+    @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+    @apply transition-colors duration-200;
+  }
+  
+  .btn-success {
+    @apply bg-green-600 text-white hover:bg-green-700;
+    @apply px-4 py-2 rounded-md font-medium text-sm;
+    @apply focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2;
+    @apply transition-colors duration-200;
+  }
+  
+  .btn-danger {
+    @apply bg-destructive text-destructive-foreground hover:bg-destructive/90;
+    @apply px-4 py-2 rounded-md font-medium text-sm;
+    @apply focus:outline-none focus:ring-2 focus:ring-destructive focus:ring-offset-2;
+    @apply transition-colors duration-200;
+  }
+  
+  /* Data Tables */
+  .data-table {
+    @apply w-full border-collapse bg-card rounded-lg overflow-hidden shadow-sm;
+  }
+  
+  .data-table th {
+    @apply bg-muted text-muted-foreground font-semibold text-xs uppercase tracking-wider;
+    @apply px-6 py-3 text-left border-b border-border;
+  }
+  
+  .data-table td {
+    @apply px-6 py-4 text-sm text-foreground border-b border-border;
+  }
+  
+  .data-table tr:hover {
+    @apply bg-muted/50;
+  }
+  
+  /* Navigation Enhancements */
+  .nav-item {
+    @apply flex items-center px-3 py-2 text-sm font-medium rounded-md;
+    @apply hover:bg-accent hover:text-accent-foreground;
+    @apply transition-colors duration-200;
+  }
+  
+  .nav-item-active {
+    @apply nav-item bg-accent text-accent-foreground;
+  }
+  
+  /* Dashboard Cards */
+  .dashboard-card {
+    @apply healthcare-card flex flex-col;
+  }
+  
+  .dashboard-card-header {
+    @apply flex items-center justify-between pb-2;
+  }
+  
+  .dashboard-card-title {
+    @apply text-sm font-medium text-muted-foreground;
+  }
+  
+  .dashboard-card-value {
+    @apply text-2xl font-bold text-foreground;
+  }
+  
+  .dashboard-card-change {
+    @apply text-xs text-muted-foreground;
+  }
+  
+  /* Loading States */
+  .loading-skeleton {
+    @apply animate-pulse bg-muted rounded;
+  }
+  
+  .loading-spinner {
+    @apply animate-spin rounded-full border-2 border-muted border-t-primary;
+  }
+  
+  /* Healthcare Specific Components */
+  .patient-info-card {
+    @apply healthcare-card bg-gradient-to-r from-blue-50 to-green-50;
+    @apply border-l-4 border-l-primary;
+  }
+  
+  .claim-status-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply ring-1 ring-inset;
+  }
+  
+  .priority-high {
+    @apply bg-red-50 text-red-700 ring-red-600/20;
+  }
+  
+  .priority-medium {
+    @apply bg-yellow-50 text-yellow-700 ring-yellow-600/20;
+  }
+  
+  .priority-low {
+    @apply bg-green-50 text-green-700 ring-green-600/20;
+  }
+  
+  /* Accessibility Improvements */
+  .sr-only {
+    @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
+    clip: rect(0, 0, 0, 0);
+  }
+  
+  /* Focus Management */
+  .focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2;
+  }
+  
+  /* Smooth Animations */
+  .smooth-transition {
+    @apply transition-all duration-200 ease-in-out;
+  }
+}

@@ -1,0 +1,1117 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
+import { 
+  Search, 
+  Filter, 
+  Download, 
+  AlertTriangle, 
+  CheckCircle, 
+  XCircle, 
+  Edit, 
+  Save, 
+  X,
+  Eye,
+  DollarSign,
+  Calendar,
+  User,
+  FileText,
+  Building,
+  Stethoscope,
+  Calculator,
+  MessageSquare,
+  Package,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp
+} from "lucide-react"
+
+interface BatchClaim {
+  id: string
+  serialNumber: number
+  uniqueBeneficiaryId: string
+  uniqueClaimId: string
+  tpaName: string
+  facilityName: string
+  facilityState: string
+  facilityCode: string
+  batchNumber: string
+  hospitalNumber: string
+  dateOfAdmission: string
+  beneficiaryName: string
+  dateOfBirth: string
+  age: number
+  address: string
+  phoneNumber: string
+  nin: string
+  dateOfTreatment: string
+  dateOfDischarge: string
+  primaryDiagnosis: string
+  secondaryDiagnosis: string
+  treatmentProcedure: string
+  quantity: number
+  dateOfClaimSubmission: string
+  monthOfSubmission: string
+  costOfInvestigation: number
+  costOfProcedure: number
+  costOfMedication: number
+  costOfOtherServices: number
+  totalCostOfCare: number
+  approvedCostOfCare: number
+  decision: string
+  reasonForRejection: string
+  dateOfClaimsPayment: string
+  tpaRemarks: string
+  // TPA audit flags and completion status
+  auditFlags: string[]
+  nhiaVariance: number
+  riskScore: number
+  status: 'pending_review' | 'approved' | 'rejected' | 'needs_clarification'
+  facilityDataComplete: boolean  // A-W columns filled by facility
+  tpaDataComplete: boolean      // X-AI columns filled by TPA
+  facilityCompletionDate?: string
+  tpaCompletionDate?: string
+}
+
+interface BatchClaimsViewProps {
+  batchId: string
+  batchNumber: string
+  onClose: () => void
+}
+
+export function BatchClaimsView({ batchId, batchNumber, onClose }: BatchClaimsViewProps) {
+  const [claims, setClaims] = useState<BatchClaim[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [completionFilter, setCompletionFilter] = useState("all") // New filter for completion status
+  const [selectedClaim, setSelectedClaim] = useState<BatchClaim | null>(null)
+  const [editingClaim, setEditingClaim] = useState<string | null>(null)
+  const [editedRemarks, setEditedRemarks] = useState("")
+  const [editedStatus, setEditedStatus] = useState("")
+  const [editedApprovedCost, setEditedApprovedCost] = useState("")
+  const [expandedClaims, setExpandedClaims] = useState<Set<string>>(new Set())
+  const [batchStats, setBatchStats] = useState({
+    total: 0,
+    facilityComplete: 0,
+    tpaComplete: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0
+  })
+
+  // Fetch batch claims data from API
+  useEffect(() => {
+    if (batchId) {
+      fetchBatchClaims()
+    }
+  }, [batchId])
+
+  const fetchBatchClaims = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/batches/${batchId}/claims`, { credentials: 'include' })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setClaims(data.claims || [])
+        
+        // Calculate stats from fetched data
+        setClaimStats({
+          total: data.claims.length,
+          facilityComplete: data.claims.filter((c: any) => c.facilityDataComplete).length,
+          tpaComplete: data.claims.filter((c: any) => c.tpaDataComplete).length,
+          pending: data.claims.filter((c: any) => c.status === 'pending_review').length,
+          approved: data.claims.filter((c: any) => c.status === 'approved').length,
+          rejected: data.claims.filter((c: any) => c.status === 'rejected').length
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching batch claims:', error)
+      setClaims([])
+      setClaimStats({
+        total: 0,
+        facilityComplete: 0,
+        tpaComplete: 0,
+        pending: 0,
+        approved: 0,
+        rejected: 0
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const filteredClaims = claims.filter(claim => {
+          dateOfBirth: "01/02/1983",
+          age: 42,
+          address: "FAGOJI, DUTSE",
+          phoneNumber: "8038280456",
+          nin: "37692141797",
+          dateOfTreatment: "21/05/2025",
+          dateOfDischarge: "23/05/2025",
+          primaryDiagnosis: "Preeclampsia O14.9",
+          secondaryDiagnosis: "",
+          treatmentProcedure: "Delivery",
+          quantity: 1,
+          dateOfClaimSubmission: "01/06/2025",
+          monthOfSubmission: "June 2025",
+          costOfInvestigation: 35639.56,
+          costOfProcedure: 35000,
+          costOfMedication: 34239,
+          costOfOtherServices: 0,
+          totalCostOfCare: 104878.56,
+          approvedCostOfCare: 102879,
+          decision: "Submitted and awaiting verification",
+          reasonForRejection: "",
+          dateOfClaimsPayment: "",
+          tpaRemarks: "",
+          auditFlags: ["cost_variance"],
+          nhiaVariance: 12000,
+          riskScore: 15,
+          status: 'pending_review',
+          facilityDataComplete: true,
+          tpaDataComplete: false,
+          facilityCompletionDate: "2025-06-01"
+        },
+        {
+          id: "2",
+          serialNumber: 2356,
+          uniqueBeneficiaryId: "3355_A",
+          uniqueClaimId: "3355AXA_A",
+          tpaName: "Axa Mansard",
+          facilityName: "RASHEED SHEKONI FEDERAL UNIVERSITY TEACHING HOSPITAL DUTSE",
+          facilityState: "Jigawa",
+          facilityCode: "JG0027",
+          batchNumber: "APRIL",
+          hospitalNumber: "831591",
+          dateOfAdmission: "20/05/2025",
+          beneficiaryName: "HAUWA ADAMU",
+          dateOfBirth: "01/01/1995",
+          age: 30,
+          address: "GALAMAWA, DUTSE",
+          phoneNumber: "89328733142",
+          nin: "",
+          dateOfTreatment: "20/05/2025",
+          dateOfDischarge: "23/05/2025",
+          primaryDiagnosis: "Antepartum haemorrhage O46.9",
+          secondaryDiagnosis: "",
+          treatmentProcedure: "Emergency CS",
+          quantity: 1,
+          dateOfClaimSubmission: "01/06/2025",
+          monthOfSubmission: "June 2025",
+          costOfInvestigation: 99579.12,
+          costOfProcedure: 180000,
+          costOfMedication: 40058,
+          costOfOtherServices: 0,
+          totalCostOfCare: 319637.12,
+          approvedCostOfCare: 317637,
+          decision: "Submitted and awaiting verification",
+          reasonForRejection: "",
+          dateOfClaimsPayment: "",
+          tpaRemarks: "",
+          auditFlags: ["high_cost"],
+          nhiaVariance: 45000,
+          riskScore: 25,
+          status: 'pending_review',
+          facilityDataComplete: true,
+          tpaDataComplete: false,
+          facilityCompletionDate: "2025-06-01"
+        },
+        {
+          id: "3",
+          serialNumber: 2700,
+          uniqueBeneficiaryId: "1287_B",
+          uniqueClaimId: "1287BAS_A",
+          tpaName: "Bastion",
+          facilityName: "FEDERAL MEDICAL CENTRE, EPE",
+          facilityState: "LAGOS",
+          facilityCode: "LA/0125P",
+          batchNumber: "FMCE/05/002",
+          hospitalNumber: "222479",
+          dateOfAdmission: "08/05/2025",
+          beneficiaryName: "ATIKU OMOWUNMI",
+          dateOfBirth: "25/05/1997",
+          age: 29,
+          address: "7, ISALE EBUTTE, ORIMEDU, IBEJU-LEKKI",
+          phoneNumber: "7070000000",
+          nin: "1240000000",
+          dateOfTreatment: "08/05/2025",
+          dateOfDischarge: "08/05/2025",
+          primaryDiagnosis: "PREVIOUS CEASAREAN SECTION + PRESENTATION OF TWIN GESTATION AND POST OPERATION HYPOCHOROMIC SHOCK",
+          secondaryDiagnosis: "",
+          treatmentProcedure: "Caesarean section",
+          quantity: 1,
+          dateOfClaimSubmission: "28/05/2025",
+          monthOfSubmission: "May 2025",
+          costOfInvestigation: 247441.43,
+          costOfProcedure: 415700,
+          costOfMedication: 97246,
+          costOfOtherServices: 0,
+          totalCostOfCare: 760387.43,
+          approvedCostOfCare: 760387.43,
+          decision: "Submitted and awaiting verification",
+          reasonForRejection: "",
+          dateOfClaimsPayment: "",
+          tpaRemarks: "Approved after cost review. Complex procedure justified.",
+          auditFlags: ["exceptional_cost", "complex_procedure"],
+          nhiaVariance: 120000,
+          riskScore: 35,
+          status: 'approved',
+          facilityDataComplete: true,
+          tpaDataComplete: true,
+          facilityCompletionDate: "2025-05-28",
+          tpaCompletionDate: "2025-06-02"
+        }
+      ]
+      setClaims(mockClaims)
+      
+      // Calculate batch statistics
+      const stats = {
+        total: mockClaims.length,
+        facilityComplete: mockClaims.filter(c => c.facilityDataComplete).length,
+        tpaComplete: mockClaims.filter(c => c.tpaDataComplete).length,
+        pending: mockClaims.filter(c => c.status === 'pending_review').length,
+        approved: mockClaims.filter(c => c.status === 'approved').length,
+        rejected: mockClaims.filter(c => c.status === 'rejected').length
+      }
+      setBatchStats(stats)
+      
+      setLoading(false)
+    }, 1000)
+  }, [])
+
+  const filteredClaims = claims.filter(claim => {
+    const matchesSearch = 
+      claim.uniqueClaimId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      claim.beneficiaryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      claim.facilityName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      claim.primaryDiagnosis.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const matchesStatus = statusFilter === "all" || claim.status === statusFilter
+    
+    const matchesCompletion = 
+      completionFilter === "all" ||
+      (completionFilter === "facility_complete" && claim.facilityDataComplete && !claim.tpaDataComplete) ||
+      (completionFilter === "tpa_pending" && claim.facilityDataComplete && !claim.tpaDataComplete) ||
+      (completionFilter === "tpa_complete" && claim.tpaDataComplete) ||
+      (completionFilter === "both_complete" && claim.facilityDataComplete && claim.tpaDataComplete)
+    
+    return matchesSearch && matchesStatus && matchesCompletion
+  })
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending_review':
+        return <Badge variant="secondary" className="bg-orange-100 text-orange-800"><AlertTriangle className="h-3 w-3 mr-1" />Pending Review</Badge>
+      case 'approved':
+        return <Badge variant="default" className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" />Approved</Badge>
+      case 'rejected':
+        return <Badge variant="destructive" className="bg-red-100 text-red-800"><XCircle className="h-3 w-3 mr-1" />Rejected</Badge>
+      case 'needs_clarification':
+        return <Badge variant="outline" className="bg-blue-100 text-blue-800"><MessageSquare className="h-3 w-3 mr-1" />Needs Clarification</Badge>
+      default:
+        return <Badge variant="secondary">Unknown</Badge>
+    }
+  }
+
+  const getAuditFlags = (flags: string[]) => {
+    return flags.map((flag, index) => (
+      <Badge key={index} variant="outline" className="text-xs mr-1 mb-1">
+        {flag.replace('_', ' ')}
+      </Badge>
+    ))
+  }
+
+  const getCompletionStatus = (claim: BatchClaim) => {
+    if (claim.facilityDataComplete && claim.tpaDataComplete) {
+      return (
+        <div className="flex items-center space-x-1">
+          <Badge className="bg-green-100 text-green-800 border-green-200">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Both Complete
+          </Badge>
+        </div>
+      )
+    } else if (claim.facilityDataComplete && !claim.tpaDataComplete) {
+      return (
+        <div className="flex items-center space-x-1">
+          <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+            <Building className="h-3 w-3 mr-1" />
+            Facility Complete
+          </Badge>
+          <Badge className="bg-orange-100 text-orange-800 border-orange-200">
+            <AlertTriangle className="h-3 w-3 mr-1" />
+            TPA Pending
+          </Badge>
+        </div>
+      )
+    } else if (!claim.facilityDataComplete) {
+      return (
+        <Badge className="bg-red-100 text-red-800 border-red-200">
+          <XCircle className="h-3 w-3 mr-1" />
+          Facility Incomplete
+        </Badge>
+      )
+    } else {
+      return (
+        <Badge className="bg-gray-100 text-gray-800 border-gray-200">
+          Unknown Status
+        </Badge>
+      )
+    }
+  }
+
+  const handleUpdateClaim = (claimId: string) => {
+    setClaims(prev => prev.map(claim => 
+      claim.id === claimId 
+        ? { 
+            ...claim, 
+            tpaRemarks: editedRemarks,
+            status: editedStatus as any,
+            approvedCostOfCare: parseFloat(editedApprovedCost) || claim.approvedCostOfCare
+          }
+        : claim
+    ))
+    setEditingClaim(null)
+    setEditedRemarks("")
+    setEditedStatus("")
+    setEditedApprovedCost("")
+  }
+
+  const startEditing = (claim: BatchClaim) => {
+    setEditingClaim(claim.id)
+    setEditedRemarks(claim.tpaRemarks)
+    setEditedStatus(claim.status)
+    setEditedApprovedCost(claim.approvedCostOfCare.toString())
+  }
+
+  // Calculate dynamic stats from current claims
+  const currentStats = {
+    total: claims.length,
+    pending: claims.filter(c => c.status === 'pending_review').length,
+    approved: claims.filter(c => c.status === 'approved').length,
+    rejected: claims.filter(c => c.status === 'rejected').length,
+    totalValue: claims.reduce((sum, c) => sum + c.totalCostOfCare, 0),
+    approvedValue: claims.reduce((sum, c) => sum + c.approvedCostOfCare, 0),
+    facilityComplete: claims.filter(c => c.facilityDataComplete).length,
+    tpaComplete: claims.filter(c => c.tpaDataComplete).length
+  }
+
+  // Helper functions for data grouping and validation
+  const toggleClaimExpansion = (claimId: string) => {
+    setExpandedClaims(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(claimId)) {
+        newSet.delete(claimId)
+      } else {
+        newSet.add(claimId)
+      }
+      return newSet
+    })
+  }
+
+  const getDataCompletenessScore = (claim: BatchClaim) => {
+    const facilityFields = [
+      claim.uniqueBeneficiaryId, claim.uniqueClaimId, claim.facilityName, 
+      claim.beneficiaryName, claim.dateOfBirth, claim.primaryDiagnosis,
+      claim.treatmentProcedure, claim.totalCostOfCare
+    ]
+    const tpaFields = [
+      claim.approvedCostOfCare, claim.decision, claim.tpaRemarks,
+      claim.auditFlags.length > 0, claim.nhiaVariance !== undefined
+    ]
+    
+    const facilityComplete = facilityFields.filter(field => field && field !== "").length / facilityFields.length
+    const tpaComplete = tpaFields.filter(field => field && field !== "").length / tpaFields.length
+    
+    return { facilityComplete, tpaComplete }
+  }
+
+  const getValidationColor = (score: number) => {
+    if (score >= 0.9) return "text-green-600"
+    if (score >= 0.7) return "text-yellow-600"
+    return "text-red-600"
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 2
+    }).format(amount)
+  }
+
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading batch claims...</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header with Batch Info */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Batch: {batchNumber}</h2>
+            <p className="text-gray-600">Comprehensive claims review and management</p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <Button variant="outline" onClick={onClose}>
+              <X className="h-4 w-4 mr-2" />
+              Close
+            </Button>
+            <Button className="bg-blue-600 hover:bg-blue-700">
+              <Download className="h-4 w-4 mr-2" />
+              Export Batch
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Batch Statistics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
+          <CardContent className="p-4 text-center">
+            <Package className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+            <p className="text-2xl font-bold text-blue-900">{batchStats.total}</p>
+            <p className="text-xs text-blue-600">Total Claims</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200">
+          <CardContent className="p-4 text-center">
+            <Building className="h-8 w-8 mx-auto mb-2 text-emerald-600" />
+            <p className="text-2xl font-bold text-emerald-900">{batchStats.facilityComplete}</p>
+            <p className="text-xs text-emerald-600">Facility Complete</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 border border-indigo-200">
+          <CardContent className="p-4 text-center">
+            <FileText className="h-8 w-8 mx-auto mb-2 text-indigo-600" />
+            <p className="text-2xl font-bold text-indigo-900">{batchStats.tpaComplete}</p>
+            <p className="text-xs text-indigo-600">TPA Complete</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200">
+          <CardContent className="p-4 text-center">
+            <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-orange-600" />
+            <p className="text-2xl font-bold text-orange-900">{batchStats.pending}</p>
+            <p className="text-xs text-orange-600">Pending Review</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200">
+          <CardContent className="p-4 text-center">
+            <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-600" />
+            <p className="text-2xl font-bold text-green-900">{batchStats.approved}</p>
+            <p className="text-xs text-green-600">Approved</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-red-50 to-red-100 border border-red-200">
+          <CardContent className="p-4 text-center">
+            <XCircle className="h-8 w-8 mx-auto mb-2 text-red-600" />
+            <p className="text-2xl font-bold text-red-900">{batchStats.rejected}</p>
+            <p className="text-xs text-red-600">Rejected</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200">
+          <CardContent className="p-4 text-center">
+            <DollarSign className="h-8 w-8 mx-auto mb-2 text-purple-600" />
+            <p className="text-lg font-bold text-purple-900">₦{currentStats.totalValue.toLocaleString()}</p>
+            <p className="text-xs text-purple-600">Total Claimed</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200">
+          <CardContent className="p-4 text-center">
+            <Calculator className="h-8 w-8 mx-auto mb-2 text-emerald-600" />
+            <p className="text-lg font-bold text-emerald-900">₦{currentStats.approvedValue.toLocaleString()}</p>
+            <p className="text-xs text-emerald-600">Total Approved</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* TPA Quick Actions */}
+      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+        <CardHeader>
+          <CardTitle className="text-lg text-blue-900">TPA Workflow Actions</CardTitle>
+          <p className="text-sm text-blue-700">Quick actions for processing facility-submitted claims</p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700 justify-start"
+              onClick={() => setCompletionFilter("tpa_pending")}
+            >
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              Review Pending Claims ({batchStats.facilityComplete - batchStats.tpaComplete})
+            </Button>
+            <Button 
+              variant="outline" 
+              className="border-green-200 text-green-700 hover:bg-green-50 justify-start"
+              onClick={() => {
+                // Bulk approve logic
+                alert("Bulk approve functionality coming soon!")
+              }}
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Bulk Approve Selected
+            </Button>
+            <Button 
+              variant="outline" 
+              className="border-purple-200 text-purple-700 hover:bg-purple-50 justify-start"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export for Payment
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Search and Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
+              <Input
+                placeholder="Search by claim ID, beneficiary name, facility, or diagnosis..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="pending_review">Pending Review</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="needs_clarification">Needs Clarification</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={completionFilter} onValueChange={setCompletionFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by completion" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Claims</SelectItem>
+                <SelectItem value="facility_complete">Facility Complete</SelectItem>
+                <SelectItem value="tpa_pending">TPA Pending</SelectItem>
+                <SelectItem value="tpa_complete">TPA Complete</SelectItem>
+                <SelectItem value="both_complete">Both Complete</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Enhanced Claims Table */}
+      <Card className="border-2 border-[#104D7F] shadow-xl">
+        <CardHeader className="bg-gradient-to-r from-[#104D7F] to-[#0d3f6b] text-white">
+          <CardTitle className="flex items-center space-x-3">
+            <FileText className="h-6 w-6" />
+            <span>Claims in Batch - Full Data View (Columns A-AI)</span>
+          </CardTitle>
+          <p className="text-[#e2e8f0] text-sm">
+            Expand rows to view complete facility data (A-W) and TPA data (X-AI)
+          </p>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50">
+                  <TableHead className="w-16">Expand</TableHead>
+                  <TableHead className="w-20">S/N</TableHead>
+                  <TableHead className="min-w-[120px]">Claim ID</TableHead>
+                  <TableHead className="min-w-[150px]">Beneficiary</TableHead>
+                  <TableHead className="min-w-[200px]">Facility</TableHead>
+                  <TableHead className="min-w-[150px]">Diagnosis</TableHead>
+                  <TableHead className="min-w-[120px]">Procedure</TableHead>
+                  <TableHead className="min-w-[100px]">Dates</TableHead>
+                  <TableHead className="min-w-[120px]">Claimed Cost</TableHead>
+                  <TableHead className="min-w-[120px]">Approved Cost</TableHead>
+                  <TableHead className="min-w-[150px]">Data Status</TableHead>
+                  <TableHead className="min-w-[100px]">Audit Flags</TableHead>
+                  <TableHead className="min-w-[120px]">TPA Status</TableHead>
+                  <TableHead className="min-w-[200px]">TPA Remarks</TableHead>
+                  <TableHead className="w-32">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredClaims.map((claim) => {
+                  const isExpanded = expandedClaims.has(claim.id)
+                  const completeness = getDataCompletenessScore(claim)
+                  
+                  return (
+                    <>
+                      <TableRow key={claim.id} className="hover:bg-gray-50 border-b">
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => toggleClaimExpansion(claim.id)}
+                            className="p-1 h-8 w-8"
+                          >
+                            {isExpanded ? (
+                              <ChevronDown className="h-4 w-4 text-[#104D7F]" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-[#104D7F]" />
+                            )}
+                          </Button>
+                        </TableCell>
+                        <TableCell className="font-medium">{claim.serialNumber}</TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium text-[#104D7F]">{claim.uniqueClaimId}</p>
+                            <p className="text-xs text-gray-500">{claim.uniqueBeneficiaryId}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{claim.beneficiaryName}</p>
+                            <p className="text-xs text-gray-500">Age: {claim.age} • {claim.phoneNumber}</p>
+                            <p className="text-xs text-gray-500">{claim.nin || "No NIN"}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium text-sm">{claim.facilityName}</p>
+                            <p className="text-xs text-gray-500">{claim.facilityState} • {claim.facilityCode}</p>
+                            <p className="text-xs text-gray-500">Hospital: {claim.hospitalNumber}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="text-sm font-medium">{claim.primaryDiagnosis}</p>
+                            {claim.secondaryDiagnosis && (
+                              <p className="text-xs text-gray-500">{claim.secondaryDiagnosis}</p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <p className="text-sm">{claim.treatmentProcedure}</p>
+                          <p className="text-xs text-gray-500">Qty: {claim.quantity}</p>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-xs">
+                            <p><span className="text-gray-500">Adm:</span> {claim.dateOfAdmission}</p>
+                            <p><span className="text-gray-500">Dis:</span> {claim.dateOfDischarge}</p>
+                            <p><span className="text-gray-500">Sub:</span> {claim.dateOfClaimSubmission}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-semibold text-blue-600">{formatCurrency(claim.totalCostOfCare)}</p>
+                            <div className="text-xs text-gray-500 space-y-1">
+                              <p>Inv: {formatCurrency(claim.costOfInvestigation)}</p>
+                              <p>Proc: {formatCurrency(claim.costOfProcedure)}</p>
+                              <p>Med: {formatCurrency(claim.costOfMedication)}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {editingClaim === claim.id ? (
+                            <Input
+                              type="number"
+                              value={editedApprovedCost}
+                              onChange={(e) => setEditedApprovedCost(e.target.value)}
+                              className="w-32 text-sm"
+                            />
+                          ) : (
+                            <div>
+                              <p className="font-semibold text-green-600">{formatCurrency(claim.approvedCostOfCare)}</p>
+                              {claim.nhiaVariance > 0 && (
+                                <p className="text-xs text-orange-600">+{formatCurrency(claim.nhiaVariance)} vs NHIA</p>
+                              )}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between text-xs mb-1">
+                                  <span className="text-blue-600">Facility</span>
+                                  <span className={getValidationColor(completeness.facilityComplete)}>
+                                    {Math.round(completeness.facilityComplete * 100)}%
+                                  </span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                                    style={{ width: `${completeness.facilityComplete * 100}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between text-xs mb-1">
+                                  <span className="text-green-600">TPA</span>
+                                  <span className={getValidationColor(completeness.tpaComplete)}>
+                                    {Math.round(completeness.tpaComplete * 100)}%
+                                  </span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                                    style={{ width: `${completeness.tpaComplete * 100}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            {getAuditFlags(claim.auditFlags)}
+                            {claim.riskScore > 20 && (
+                              <Badge variant="destructive" className="text-xs">
+                                Risk: {claim.riskScore}
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {editingClaim === claim.id ? (
+                            <Select value={editedStatus} onValueChange={setEditedStatus}>
+                              <SelectTrigger className="w-36">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending_review">Pending Review</SelectItem>
+                                <SelectItem value="approved">Approved</SelectItem>
+                                <SelectItem value="rejected">Rejected</SelectItem>
+                                <SelectItem value="needs_clarification">Needs Clarification</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            getStatusBadge(claim.status)
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {editingClaim === claim.id ? (
+                            <Textarea
+                              value={editedRemarks}
+                              onChange={(e) => setEditedRemarks(e.target.value)}
+                              placeholder="Enter TPA remarks..."
+                              className="w-48 text-sm"
+                              rows={2}
+                            />
+                          ) : (
+                            <p className="text-sm text-gray-600 max-w-48 truncate">
+                              {claim.tpaRemarks || "No remarks"}
+                            </p>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            {editingClaim === claim.id ? (
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleUpdateClaim(claim.id)}
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  <Save className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setEditingClaim(null)}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => startEditing(claim)}
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => toggleClaimExpansion(claim.id)}
+                                  className="text-[#104D7F] hover:bg-[#104D7F]/10"
+                                >
+                                  {isExpanded ? (
+                                    <ChevronUp className="h-3 w-3" />
+                                  ) : (
+                                    <ChevronDown className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      
+                      {/* Expanded Row with Full Data */}
+                      {isExpanded && (
+                        <TableRow>
+                          <TableCell colSpan={15} className="p-0">
+                            <div className="bg-gray-50 border-t border-gray-200 p-6">
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* Facility Data Section (Columns A-W) */}
+                                <Card className="border-2 border-blue-200 bg-blue-50/30">
+                                  <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white pb-3">
+                                    <CardTitle className="flex items-center space-x-2 text-lg">
+                                      <Building className="h-5 w-5" />
+                                      <span>Facility Data (Columns A-W)</span>
+                                      <Badge className="ml-auto bg-white/20 text-white">
+                                        {Math.round(completeness.facilityComplete * 100)}% Complete
+                                      </Badge>
+                                    </CardTitle>
+                                  </CardHeader>
+                                  <CardContent className="p-4">
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                      <div>
+                                        <Label className="text-xs font-semibold text-blue-700">Patient Information</Label>
+                                        <div className="space-y-2 mt-2">
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">Beneficiary ID:</span>
+                                            <span className="font-medium">{claim.uniqueBeneficiaryId}</span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">Name:</span>
+                                            <span className="font-medium">{claim.beneficiaryName}</span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">Date of Birth:</span>
+                                            <span className="font-medium">{claim.dateOfBirth}</span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">Age:</span>
+                                            <span className="font-medium">{claim.age} years</span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">Phone:</span>
+                                            <span className="font-medium">{claim.phoneNumber}</span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">NIN:</span>
+                                            <span className="font-medium">{claim.nin || "Not provided"}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      <div>
+                                        <Label className="text-xs font-semibold text-blue-700">Treatment Details</Label>
+                                        <div className="space-y-2 mt-2">
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">Primary Diagnosis:</span>
+                                            <span className="font-medium">{claim.primaryDiagnosis}</span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">Secondary Diagnosis:</span>
+                                            <span className="font-medium">{claim.secondaryDiagnosis || "None"}</span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">Procedure:</span>
+                                            <span className="font-medium">{claim.treatmentProcedure}</span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">Quantity:</span>
+                                            <span className="font-medium">{claim.quantity}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="col-span-2">
+                                        <Label className="text-xs font-semibold text-blue-700">Cost Breakdown</Label>
+                                        <div className="grid grid-cols-2 gap-4 mt-2">
+                                          <div className="space-y-2">
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">Investigation:</span>
+                                              <span className="font-medium">{formatCurrency(claim.costOfInvestigation)}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">Procedure:</span>
+                                              <span className="font-medium">{formatCurrency(claim.costOfProcedure)}</span>
+                                            </div>
+                                          </div>
+                                          <div className="space-y-2">
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">Medication:</span>
+                                              <span className="font-medium">{formatCurrency(claim.costOfMedication)}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">Other Services:</span>
+                                              <span className="font-medium">{formatCurrency(claim.costOfOtherServices)}</span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                        <div className="mt-3 p-3 bg-blue-100 rounded-lg">
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-lg font-bold text-blue-800">Total Claimed:</span>
+                                            <span className="text-2xl font-bold text-blue-800">{formatCurrency(claim.totalCostOfCare)}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+
+                                {/* TPA Data Section (Columns X-AI) */}
+                                <Card className="border-2 border-green-200 bg-green-50/30">
+                                  <CardHeader className="bg-gradient-to-r from-green-600 to-green-700 text-white pb-3">
+                                    <CardTitle className="flex items-center space-x-2 text-lg">
+                                      <FileText className="h-5 w-5" />
+                                      <span>TPA Data (Columns X-AI)</span>
+                                      <Badge className="ml-auto bg-white/20 text-white">
+                                        {Math.round(completeness.tpaComplete * 100)}% Complete
+                                      </Badge>
+                                    </CardTitle>
+                                  </CardHeader>
+                                  <CardContent className="p-4">
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                      <div>
+                                        <Label className="text-xs font-semibold text-green-700">Verification & Decision</Label>
+                                        <div className="space-y-2 mt-2">
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">Decision:</span>
+                                            <span className="font-medium">{claim.decision}</span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">Status:</span>
+                                            <span className="font-medium">{claim.status}</span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">Approved Amount:</span>
+                                            <span className="font-medium text-green-600">{formatCurrency(claim.approvedCostOfCare)}</span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">NHIA Variance:</span>
+                                            <span className="font-medium text-orange-600">{formatCurrency(claim.nhiaVariance)}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      <div>
+                                        <Label className="text-xs font-semibold text-green-700">Risk & Audit</Label>
+                                        <div className="space-y-2 mt-2">
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">Risk Score:</span>
+                                            <span className={`font-medium ${claim.riskScore > 20 ? 'text-red-600' : 'text-green-600'}`}>
+                                              {claim.riskScore}
+                                            </span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">Audit Flags:</span>
+                                            <span className="font-medium">{claim.auditFlags.length}</span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">Payment Date:</span>
+                                            <span className="font-medium">{claim.dateOfClaimsPayment || "Pending"}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="col-span-2">
+                                        <Label className="text-xs font-semibold text-green-700">TPA Remarks & Notes</Label>
+                                        <div className="mt-2">
+                                          <Textarea
+                                            value={claim.tpaRemarks || ""}
+                                            placeholder="No TPA remarks yet..."
+                                            className="w-full text-sm"
+                                            rows={3}
+                                            readOnly
+                                          />
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="col-span-2">
+                                        <Label className="text-xs font-semibold text-green-700">Audit Flags</Label>
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                          {claim.auditFlags.length > 0 ? (
+                                            claim.auditFlags.map((flag, index) => (
+                                              <Badge key={index} variant="outline" className="text-xs">
+                                                {flag.replace('_', ' ')}
+                                              </Badge>
+                                            ))
+                                          ) : (
+                                            <span className="text-gray-500 text-sm">No audit flags</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              </div>
+                              
+                              {/* Quick Actions Row */}
+                              <div className="mt-6 flex justify-center space-x-4">
+                                <Button
+                                  variant="outline"
+                                  className="border-[#104D7F] text-[#104D7F] hover:bg-[#104D7F]/10"
+                                  onClick={() => startEditing(claim)}
+                                >
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit TPA Data
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  className="border-green-600 text-green-600 hover:bg-green-50"
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  Approve Claim
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  className="border-red-600 text-red-600 hover:bg-red-50"
+                                >
+                                  <XCircle className="h-4 w-4 mr-2" />
+                                  Reject Claim
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                                >
+                                  <MessageSquare className="h-4 w-4 mr-2" />
+                                  Request Clarification
+                                </Button>
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
