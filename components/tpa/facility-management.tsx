@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Building2, MapPin, Phone, Mail, Edit, Trash2 } from "lucide-react"
@@ -155,6 +155,9 @@ export function FacilityManagement({ userRole, userTpaId }: FacilityManagementPr
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Create New Facility</DialogTitle>
+                <DialogDescription>
+                  Add a new healthcare facility to your network.
+                </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>

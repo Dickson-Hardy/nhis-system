@@ -707,7 +707,7 @@ export function ClaimsProcessor() {
     totalValue: claims.reduce((sum, c) => sum + c.totalCostOfCare, 0),
     approvedValue: claims.reduce((sum, c) => sum + (c.approvedCostOfCare || 0), 0),
     duplicates: claims.filter(c => c.isDuplicate).length,
-    auditFlags: claims.reduce((sum, c) => sum + c.auditFlags.length, 0)
+    auditFlags: claims.reduce((sum, c) => sum + (c.auditFlags || []).length, 0)
   }
 
   return (

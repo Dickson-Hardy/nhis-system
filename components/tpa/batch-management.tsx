@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -16,6 +16,7 @@ import { useAuth } from "@/components/auth/auth-provider"
 import { ExcelUpload } from "./excel-upload"
 import { ManualClaimEntry } from "./manual-claim-entry"
 import { BatchClaimsView } from "./batch-claims-view"
+import FacilitySelector from "./facility-selector"
 
 export default function BatchManagement() {
   const { batches, loading, error, createBatch } = useBatches()
@@ -27,7 +28,7 @@ export default function BatchManagement() {
   const [isBatchViewOpen, setIsBatchViewOpen] = useState(false)
   const [selectedBatch, setSelectedBatch] = useState<any>(null)
   const [batchNumber, setBatchNumber] = useState("")
-  const [selectedFacility, setSelectedFacility] = useState("")
+  const [selectedFacility, setSelectedFacility] = useState<number | undefined>()
   const [batchDescription, setBatchDescription] = useState("")
   const [isCreating, setIsCreating] = useState(false)
 
@@ -107,13 +108,13 @@ export default function BatchManagement() {
     try {
       await createBatch({
         batchNumber: batchNumber.trim(),
-        facilityId: parseInt(selectedFacility),
+        facilityId: selectedFacility,
         description: batchDescription.trim() || undefined
       })
       
       // Reset form
       setBatchNumber("")
-      setSelectedFacility("")
+      setSelectedFacility(undefined)
       setBatchDescription("")
       setIsCreateBatchOpen(false)
     } catch (error) {
@@ -153,7 +154,7 @@ export default function BatchManagement() {
               <Package className="h-4 w-4 text-primary" />
             </div>
             <div className="space-y-1">
-              <p className="dashboard-card-value">{batches.length}</p>
+              <p className="dashboard-card-value">{(batches || []).length}</p>
               <p className="dashboard-card-change">All batches</p>
             </div>
           </CardContent>
@@ -167,7 +168,7 @@ export default function BatchManagement() {
             </div>
             <div className="space-y-1">
               <p className="dashboard-card-value text-blue-600">
-                {batches.filter(b => b.status === 'draft').length}
+                {(batches || []).filter(b => b.status === 'draft').length}
               </p>
               <p className="dashboard-card-change">Pending submission</p>
             </div>
@@ -182,7 +183,7 @@ export default function BatchManagement() {
             </div>
             <div className="space-y-1">
               <p className="dashboard-card-value text-green-600">
-                {batches.filter(b => b.status === 'submitted').length}
+                {(batches || []).filter(b => b.status === 'submitted').length}
               </p>
               <p className="dashboard-card-change">Under review</p>
             </div>
@@ -197,7 +198,7 @@ export default function BatchManagement() {
             </div>
             <div className="space-y-1">
               <p className="dashboard-card-value text-primary">
-                {batches.reduce((sum, batch) => sum + (batch.totalClaims || 0), 0)}
+                {(batches || []).reduce((sum, batch) => sum + (batch.totalClaims || 0), 0)}
               </p>
               <p className="dashboard-card-change">Across all batches</p>
             </div>
@@ -225,6 +226,9 @@ export default function BatchManagement() {
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle>Create New Batch</DialogTitle>
+                  <DialogDescription>
+                    Create a new batch to organize and manage your healthcare claims.
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
@@ -238,19 +242,12 @@ export default function BatchManagement() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="facility">Healthcare Facility *</Label>
-                    <Select value={selectedFacility} onValueChange={setSelectedFacility}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select facility" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">Lagos University Teaching Hospital</SelectItem>
-                        <SelectItem value="2">National Hospital Abuja</SelectItem>
-                        <SelectItem value="3">University of Port Harcourt Teaching Hospital</SelectItem>
-                        <SelectItem value="4">University College Hospital Ibadan</SelectItem>
-                        <SelectItem value="5">Ahmadu Bello University Teaching Hospital</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label>Healthcare Facility *</Label>
+                    <FacilitySelector
+                      selectedFacilityId={selectedFacility}
+                      onSelect={setSelectedFacility}
+                      placeholder="Select a facility for this batch..."
+                    />
                   </div>
                   <div>
                     <Label htmlFor="description">Batch Description (Optional)</Label>
@@ -316,7 +313,7 @@ export default function BatchManagement() {
           </Card>
           
           <div className="space-y-4">
-            {batches.length === 0 ? (
+            {(batches || []).length === 0 ? (
               <div className="text-center py-12">
                 <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
                   <Package className="h-10 w-10 text-muted-foreground" />
@@ -335,7 +332,7 @@ export default function BatchManagement() {
               </div>
             ) : (
               <div className="grid gap-4">
-                {batches.map((batch) => (
+                {(batches || []).map((batch) => (
                   <Card
                     key={batch.id}
                     className="healthcare-card hover:shadow-md transition-all duration-200 border-l-4"
@@ -459,6 +456,9 @@ export default function BatchManagement() {
                             <DialogContent className="sm:max-w-md">
                               <DialogHeader>
                                 <DialogTitle>Submit Batch for Review</DialogTitle>
+                                <DialogDescription>
+                                  Submit this batch to NHIS for review and processing.
+                                </DialogDescription>
                               </DialogHeader>
                               <div className="space-y-4">
                                 <Alert>
@@ -540,6 +540,9 @@ export default function BatchManagement() {
           <DialogHeader>
             <div className="flex items-center justify-between">
               <DialogTitle>Upload Claims for {selectedBatch?.batchNumber}</DialogTitle>
+              <DialogDescription>
+                Upload an Excel file containing claims for this batch.
+              </DialogDescription>
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -569,6 +572,9 @@ export default function BatchManagement() {
           <DialogHeader>
             <div className="flex items-center justify-between">
               <DialogTitle>Add Claim to {selectedBatch?.batchNumber}</DialogTitle>
+              <DialogDescription>
+                Manually enter claim details for this batch.
+              </DialogDescription>
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -598,6 +604,9 @@ export default function BatchManagement() {
           <DialogHeader>
             <div className="flex items-center justify-between">
               <DialogTitle>Smart Upload - Auto-Create Batches</DialogTitle>
+              <DialogDescription>
+                Upload claims and automatically create batches based on batch numbers in your data.
+              </DialogDescription>
               <Button 
                 variant="ghost" 
                 size="sm" 
