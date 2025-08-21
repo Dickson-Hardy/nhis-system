@@ -58,7 +58,6 @@ export const claims = pgTable("claims", {
     .references(() => facilities.id)
     .notNull(),
   batchNumber: varchar("batch_number", { length: 100 }),
-  batchId: integer("batch_id").references(() => batches.id),
   hospitalNumber: varchar("hospital_number", { length: 100 }),
 
   // Patient Information
@@ -94,7 +93,6 @@ export const claims = pgTable("claims", {
   // Decision and Payment
   decision: varchar("decision", { length: 50 }), // 'approved', 'rejected', 'pending'
   reasonForRejection: text("reason_for_rejection"),
-  rejectionReason: text("rejection_reason"), // Additional rejection reason field
   dateOfClaimsPayment: date("date_of_claims_payment"),
   tpaRemarks: text("tpa_remarks"),
 

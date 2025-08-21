@@ -177,7 +177,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     console.log('Filtered update data being sent to database:', JSON.stringify(updateData, null, 2))
 
-    const updatedClaim = await db.update(claims).set(updateData).where(eq(claims.id, claimId)).returning()
+    // First, try to update without returning to see if the update itself works
+    await db.update(claims).set(updateData).where(eq(claims.id, claimId))
+    
+    // Then fetch the updated claim separately
+    const updatedClaim = await db
+      .select()
+      .from(claims)
+      .where(eq(claims.id, claimId))
+      .limit(1)
 
     if (updatedClaim.length === 0) {
       return NextResponse.json({ error: "Claim not found" }, { status: 404 })

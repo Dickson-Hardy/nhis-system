@@ -33,9 +33,12 @@ import {
   Phone,
   Calendar,
   Loader2,
-  Send
+  Send,
+  CheckSquare
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { BatchClosureModal } from "@/components/tpa/batch-closure-modal"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface Claim {
   id: number
@@ -84,6 +87,16 @@ export default function BatchDetailPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [submitting, setSubmitting] = useState(false)
+  const [showClosureModal, setShowClosureModal] = useState(false)
+  const [selectedClaim, setSelectedClaim] = useState<any>(null)
+  const [isVerificationOpen, setIsVerificationOpen] = useState(false)
+  const [verificationData, setVerificationData] = useState({
+    decision: "",
+    reasonForRejection: "",
+    approvedAmount: "",
+    remarks: "",
+  })
+  const [isProcessingVerification, setIsProcessingVerification] = useState(false)
 
   useEffect(() => {
     fetchBatchDetails()
@@ -241,6 +254,87 @@ export default function BatchDetailPage() {
     return matchesSearch && matchesStatus
   })
 
+  const handleVerifyClaim = (claim: Claim) => {
+    setSelectedClaim(claim)
+    setVerificationData({
+      decision: "",
+      reasonForRejection: "",
+      approvedAmount: claim.totalCostOfCare || "",
+      remarks: "",
+    })
+    setIsVerificationOpen(true)
+  }
+
+  const submitVerification = async () => {
+    if (!selectedClaim || !verificationData.decision) {
+      alert("Please select a decision")
+      return
+    }
+
+    try {
+      setIsProcessingVerification(true)
+      
+      const payload: any = {
+        updatedAt: new Date(),
+      }
+
+      // Set status and decision based on verification decision
+      switch (verificationData.decision) {
+        case "approved":
+          payload.status = "verified"
+          payload.decision = "approved"
+          if (verificationData.approvedAmount) {
+            payload.approvedCostOfCare = verificationData.approvedAmount
+          }
+          break
+        case "rejected":
+          payload.status = "not_verified"
+          payload.decision = "rejected"
+          if (!verificationData.reasonForRejection) {
+            alert("Reason for rejection is required")
+            setIsProcessingVerification(false)
+            return
+          }
+          payload.reasonForRejection = verificationData.reasonForRejection
+          break
+        case "needs_review":
+          payload.status = "awaiting_verification"
+          payload.decision = "needs_review"
+          break
+      }
+
+      // Add remarks if provided
+      if (verificationData.remarks) {
+        payload.tpaRemarks = verificationData.remarks
+      }
+
+      const response = await fetch(`/api/claims/${selectedClaim.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      })
+
+      if (response.ok) {
+        alert('Claim verification submitted successfully!')
+        setIsVerificationOpen(false)
+        setSelectedClaim(null)
+        fetchBatchClaims() // Refresh claims to show updated status
+        fetchBatchDetails() // Refresh batch details
+      } else {
+        const error = await response.json()
+        alert(`Failed to verify claim: ${error.error || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error('Error verifying claim:', error)
+      alert('Error verifying claim. Please try again.')
+    } finally {
+      setIsProcessingVerification(false)
+    }
+  }
+
   if (loading && !batch) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -325,6 +419,15 @@ export default function BatchDetailPage() {
                           Submit Batch
                         </>
                       )}
+                    </Button>
+                  )}
+                  {batch?.status === 'submitted' && (
+                    <Button
+                      onClick={() => setShowClosureModal(true)}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <FileCheck className="h-4 w-4 mr-2" />
+                      Close Batch & Submit Report
                     </Button>
                   )}
                 </div>
@@ -520,6 +623,12 @@ export default function BatchDetailPage() {
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit Claim
                               </DropdownMenuItem>
+                              {(claim.status === "submitted" || claim.status === "awaiting_verification") && (
+                                <DropdownMenuItem onClick={() => handleVerifyClaim(claim)}>
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  Verify Claim
+                                </DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -532,6 +641,177 @@ export default function BatchDetailPage() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Claim Verification Modal */}
+      <Dialog open={isVerificationOpen} onOpenChange={setIsVerificationOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <span>Verify Claim: {selectedClaim?.uniqueClaimId}</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedClaim && (
+            <div className="space-y-4">
+              {/* Claim Summary */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium mb-2">Claim Details</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">Beneficiary:</span>
+                    <p className="font-medium">{selectedClaim.beneficiaryName}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Total Cost:</span>
+                    <p className="font-medium">₦{parseFloat(selectedClaim.totalCostOfCare || '0').toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Diagnosis:</span>
+                    <p className="font-medium">{selectedClaim.primaryDiagnosis}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Facility:</span>
+                    <p className="font-medium">{selectedClaim.facility?.name}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Verification Decision */}
+              <div className="space-y-3">
+                <Label className="text-base font-medium">Verification Decision</Label>
+                <Select value={verificationData.decision} onValueChange={(value) => setVerificationData(prev => ({ ...prev, decision: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select verification decision" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="approved">
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <span>Approve Claim</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="rejected">
+                      <div className="flex items-center space-x-2">
+                        <XCircle className="h-4 w-4 text-red-600" />
+                        <span>Reject Claim</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="needs_review">
+                      <div className="flex items-center space-x-2">
+                        <AlertTriangle className="h-4 w-4 text-orange-600" />
+                        <span>Needs Review</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Approved Amount (if approved) */}
+              {verificationData.decision === "approved" && (
+                <div className="space-y-2">
+                  <Label htmlFor="approvedAmount">Approved Amount (₦)</Label>
+                  <Input
+                    id="approvedAmount"
+                    type="number"
+                    value={verificationData.approvedAmount}
+                    onChange={(e) => setVerificationData(prev => ({ ...prev, approvedAmount: e.target.value }))}
+                    placeholder="Enter approved amount"
+                  />
+                </div>
+              )}
+
+              {/* Reason for Rejection (if rejected) */}
+              {verificationData.decision === "rejected" && (
+                <div className="space-y-2">
+                  <Label htmlFor="reasonForRejection">Reason for Rejection *</Label>
+                  <Textarea
+                    id="reasonForRejection"
+                    value={verificationData.reasonForRejection}
+                    onChange={(e) => setVerificationData(prev => ({ ...prev, reasonForRejection: e.target.value }))}
+                    placeholder="Please provide a detailed reason for rejecting this claim"
+                    rows={3}
+                  />
+                </div>
+              )}
+
+              {/* Remarks */}
+              <div className="space-y-2">
+                <Label htmlFor="remarks">Additional Remarks</Label>
+                <Textarea
+                  id="remarks"
+                  value={verificationData.remarks}
+                  onChange={(e) => setVerificationData(prev => ({ ...prev, remarks: e.target.value }))}
+                  placeholder="Add any additional comments or notes"
+                  rows={2}
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-3 pt-4">
+                <Button variant="outline" onClick={() => setIsVerificationOpen(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={submitVerification}
+                  disabled={isProcessingVerification || !verificationData.decision}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {isProcessingVerification ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Submit Verification
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Batch Closure Modal */}
+      {batch && (
+        <BatchClosureModal
+          isOpen={showClosureModal}
+          onClose={() => setShowClosureModal(false)}
+          batch={{
+            id: batchId,
+            batchNumber: batch.batchNumber,
+            totalClaims: batch.totalClaims || claims.length,
+            totalAmount: batch.totalAmount || '0',
+            tpaName: batch.tpa?.name
+          }}
+          onClosurSubmit={async (closureData) => {
+            try {
+              const response = await fetch(`/api/batches/${batchId}/close`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify(closureData)
+              })
+
+              if (response.ok) {
+                setShowClosureModal(false)
+                fetchBatchDetails() // Refresh batch details to show updated status
+              } else {
+                const data = await response.json()
+                throw new Error(data.error || 'Failed to close batch')
+              }
+            } catch (error) {
+              console.error('Error closing batch:', error)
+              throw error
+            }
+          }}
+        />
+      )}
     </div>
   )
 }

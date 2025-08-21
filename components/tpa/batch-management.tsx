@@ -20,7 +20,7 @@ import { BatchClosureModal, BatchClosureData } from "./batch-closure-modal"
 import FacilitySelector from "./facility-selector"
 
 export default function BatchManagement() {
-  const { batches, loading, error, createBatch } = useBatches()
+  const { batches, loading, error, createBatch, refetch } = useBatches()
   const { user } = useAuth()
   const [isCreateBatchOpen, setIsCreateBatchOpen] = useState(false)
   const [isUploadOpen, setIsUploadOpen] = useState(false)
@@ -160,7 +160,7 @@ export default function BatchManagement() {
       console.log("Batch closed successfully:", result)
       
       // Refresh the batches list
-      window.location.reload()
+      await refetch()
       
     } catch (error) {
       console.error("Error closing batch:", error)
@@ -563,7 +563,7 @@ export default function BatchManagement() {
                                         
                                         if (response.ok) {
                                           // Refresh batches data
-                                          window.location.reload()
+                                          await refetch()
                                         } else {
                                           const errorData = await response.json()
                                           console.error('Failed to submit batch:', errorData.error)
@@ -641,7 +641,7 @@ export default function BatchManagement() {
               onComplete={() => {
                 setIsUploadOpen(false)
                 // Refresh batches data
-                window.location.reload()
+                refetch()
               }}
             />
           )}
@@ -673,7 +673,7 @@ export default function BatchManagement() {
               onComplete={() => {
                 setIsManualEntryOpen(false)
                 // Refresh batches data
-                window.location.reload()
+                refetch()
               }}
             />
           )}
@@ -708,7 +708,7 @@ export default function BatchManagement() {
             onComplete={() => {
               setIsSmartUploadOpen(false)
               // Refresh batches data
-              window.location.reload()
+              refetch()
             }}
           />
         </DialogContent>
