@@ -3,64 +3,114 @@
 import { useState, useEffect } from "react"
 
 interface Notification {
-  id: string
+  id: number
   type: "success" | "error" | "warning" | "info"
   title: string
   message: string
-  timestamp: Date
-  read: boolean
+  createdAt: string
+  isRead: boolean
+  readAt?: string
 }
 
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Mock notifications - in real app, fetch from API
-    const mockNotifications: Notification[] = [
-      {
-        id: "1",
-        type: "success",
-        title: "Claim Approved",
-        message: "Claim CLM-2024-001 has been approved",
-        timestamp: new Date(),
-        read: false,
-      },
-      {
-        id: "2",
-        type: "warning",
-        title: "Batch Pending Review",
-        message: "Batch BATCH-2024-001 requires your attention",
-        timestamp: new Date(Date.now() - 3600000),
-        read: false,
-      },
-    ]
-
-    setNotifications(mockNotifications)
-    setUnreadCount(mockNotifications.filter((n) => !n.read).length)
+    fetchNotifications()
   }, [])
 
-  const markAsRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((notification) => (notification.id === id ? { ...notification, read: true } : notification)),
-    )
-    setUnreadCount((prev) => Math.max(0, prev - 1))
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch("/api/notifications")
+      const data = await response.json()
+      
+      if (response.ok) {
+        setNotifications(data.notifications)
+        setUnreadCount(data.notifications.filter((n: Notification) => !n.isRead).length)
+      }
+    } catch (error) {
+      console.error("Error fetching notifications:", error)
+      // Fallback to empty array on error
+      setNotifications([])
+      setUnreadCount(0)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((notification) => ({ ...notification, read: true })))
-    setUnreadCount(0)
+  const markAsRead = async (id: number) => {
+    try {
+      const response = await fetch("/api/notifications", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "mark_read",
+          notificationId: id,
+        }),
+      })
+
+      if (response.ok) {
+        setNotifications((prev) =>
+          prev.map((notification) => 
+            notification.id === id 
+              ? { ...notification, isRead: true, readAt: new Date().toISOString() } 
+              : notification
+          ),
+        )
+        setUnreadCount((prev) => Math.max(0, prev - 1))
+      }
+    } catch (error) {
+      console.error("Error marking notification as read:", error)
+    }
   }
 
-  const removeNotification = (id: string) => {
+  const markAllAsRead = async () => {
+    try {
+      const response = await fetch("/api/notifications", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "mark_all_read",
+        }),
+      })
+
+      if (response.ok) {
+        setNotifications((prev) => 
+          prev.map((notification) => ({ 
+            ...notification, 
+            isRead: true,
+            readAt: new Date().toISOString()
+          }))
+        )
+        setUnreadCount(0)
+      }
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error)
+    }
+  }
+
+  const removeNotification = (id: number) => {
     setNotifications((prev) => prev.filter((notification) => notification.id !== id))
+    const notification = notifications.find(n => n.id === id)
+    if (notification && !notification.isRead) {
+      setUnreadCount((prev) => Math.max(0, prev - 1))
+    }
   }
 
   return {
     notifications,
     unreadCount,
+    loading,
     markAsRead,
     markAllAsRead,
     removeNotification,
+    refreshNotifications: fetchNotifications,
   }
 }

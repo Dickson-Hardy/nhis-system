@@ -1,3 +1,4 @@
+
 import { type NextRequest, NextResponse } from "next/server"
 import { db, batches, claims } from "@/lib/db"
 import { eq } from "drizzle-orm"
@@ -5,9 +6,9 @@ import { verifyToken } from "@/lib/auth"
 import { sendNotification } from "@/lib/notifications"
 
 // PUT /api/batches/[id]/approve - Approve batch
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const token = request.cookies.get("token")?.value
+    const token = request.cookies.get("auth-token")?.value
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -17,7 +18,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: "Access denied" }, { status: 403 })
     }
 
-    const batchId = Number.parseInt(params.id)
+    const { id } = await params
+    const batchId = Number.parseInt(id)
     const { remarks } = await request.json()
 
     const batch = await db.select().from(batches).where(eq(batches.id, batchId))

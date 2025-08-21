@@ -31,7 +31,9 @@ import {
   Upload,
   FileCheck,
   Phone,
-  Calendar
+  Calendar,
+  Loader2,
+  Send
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
@@ -81,6 +83,7 @@ export default function BatchDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     fetchBatchDetails()
@@ -185,6 +188,42 @@ export default function BatchDetailPage() {
     fetchBatchClaims()
   }
 
+  const handleSubmitBatch = async () => {
+    if (!batch || batch.status !== 'draft') {
+      return
+    }
+
+    if (claims.length === 0) {
+      alert('Cannot submit empty batch. Please add claims first.')
+      return
+    }
+
+    if (!confirm(`Are you sure you want to submit this batch with ${claims.length} claims? Once submitted, you cannot add more claims.`)) {
+      return
+    }
+
+    try {
+      setSubmitting(true)
+      const response = await fetch(`/api/batches/${batchId}/submit`, {
+        method: 'POST',
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        alert('Batch submitted successfully!')
+        fetchBatchDetails() // Refresh to get updated status
+      } else {
+        const data = await response.json()
+        alert(`Failed to submit batch: ${data.error || 'Unknown error'}`)
+      }
+    } catch (err) {
+      console.error('Error submitting batch:', err)
+      alert('Error submitting batch. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const formatStatus = (status: string) => {
     return status.split('_').map(word => 
       word.charAt(0).toUpperCase() + word.slice(1)
@@ -269,6 +308,25 @@ export default function BatchDetailPage() {
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Refresh
                   </Button>
+                  {batch?.status === 'draft' && (
+                    <Button
+                      onClick={handleSubmitBatch}
+                      disabled={submitting || (claims.length === 0)}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      {submitting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          Submit Batch
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
                 <h1 className="text-3xl font-bold mb-2">
                   Batch: {batch?.batchNumber}

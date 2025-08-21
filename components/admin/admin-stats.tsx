@@ -66,7 +66,7 @@ export function AdminStats({
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {stats.map((stat) => (
-        <Card key={stat.title} className="bg-card border-border shadow-sm">
+        <Card key={stat.title} className="bg-card border-border shadow-sm hover:shadow-md transition-shadow duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-card-foreground">{stat.title}</CardTitle>
             <stat.icon className={cn("h-4 w-4", stat.color)} />
@@ -74,7 +74,9 @@ export function AdminStats({
           <CardContent>
             <div className="text-2xl font-bold text-card-foreground">{stat.value}</div>
             <p className="text-xs text-muted-foreground">
-              <span className={stat.change.startsWith("+") ? "text-chart-2" : "text-destructive"}>{stat.change}</span>{" "}
+              <span className={cn(
+                stat.change.startsWith("+") ? "text-[#088C17]" : "text-destructive"
+              )}>{stat.change}</span>{" "}
               from last month
             </p>
           </CardContent>

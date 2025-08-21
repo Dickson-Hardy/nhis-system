@@ -20,10 +20,11 @@ export async function GET(request: NextRequest) {
     const page = Number.parseInt(searchParams.get("page") || "1")
     const limit = Number.parseInt(searchParams.get("limit") || "10")
     const search = searchParams.get("search")
-    const status = searchParams.get("status")
+    const status = searchParams.get("status") || "closed" // Default to closed claims for admin review
     const decision = searchParams.get("decision")
     const tpaId = searchParams.get("tpaId")
     const facilityId = searchParams.get("facilityId")
+    const batchNumber = searchParams.get("batchNumber")
 
     const offset = (page - 1) * limit
 
@@ -49,6 +50,10 @@ export async function GET(request: NextRequest) {
     if (facilityId) {
       whereConditions.push(eq(claims.facilityId, parseInt(facilityId)))
     }
+    
+    if (batchNumber) {
+      whereConditions.push(eq(claims.batchNumber, batchNumber))
+    }
 
     const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined
 
@@ -57,24 +62,36 @@ export async function GET(request: NextRequest) {
       .select({
         id: claims.id,
         uniqueClaimId: claims.uniqueClaimId,
+        uniqueBeneficiaryId: claims.uniqueBeneficiaryId,
         beneficiaryName: claims.beneficiaryName,
         dateOfBirth: claims.dateOfBirth,
         age: claims.age,
+        address: claims.address,
+        phoneNumber: claims.phoneNumber,
+        nin: claims.nin,
         primaryDiagnosis: claims.primaryDiagnosis,
         secondaryDiagnosis: claims.secondaryDiagnosis,
         treatmentProcedure: claims.treatmentProcedure,
         totalCostOfCare: claims.totalCostOfCare,
         approvedCostOfCare: claims.approvedCostOfCare,
+        costOfInvestigation: claims.costOfInvestigation,
+        costOfProcedure: claims.costOfProcedure,
+        costOfMedication: claims.costOfMedication,
+        costOfOtherServices: claims.costOfOtherServices,
         status: claims.status,
         decision: claims.decision,
         reasonForRejection: claims.reasonForRejection,
+        rejectionReason: claims.rejectionReason,
         dateOfAdmission: claims.dateOfAdmission,
         dateOfDischarge: claims.dateOfDischarge,
+        dateOfTreatment: claims.dateOfTreatment,
         dateOfClaimSubmission: claims.dateOfClaimSubmission,
         dateOfClaimsPayment: claims.dateOfClaimsPayment,
+        hospitalNumber: claims.hospitalNumber,
         batchNumber: claims.batchNumber,
         tpaRemarks: claims.tpaRemarks,
         createdAt: claims.createdAt,
+        updatedAt: claims.updatedAt,
         tpa: {
           id: tpas.id,
           name: tpas.name,
@@ -105,6 +122,7 @@ export async function GET(request: NextRequest) {
         submittedClaims: sql<number>`count(case when ${claims.status} = 'submitted' then 1 end)`,
         awaitingVerification: sql<number>`count(case when ${claims.status} = 'awaiting_verification' then 1 end)`,
         verifiedClaims: sql<number>`count(case when ${claims.status} = 'verified' then 1 end)`,
+        closedClaims: sql<number>`count(case when ${claims.status} = 'closed' then 1 end)`,
         approvedClaims: sql<number>`count(case when ${claims.decision} = 'approved' then 1 end)`,
         rejectedClaims: sql<number>`count(case when ${claims.decision} = 'rejected' then 1 end)`,
         pendingDecision: sql<number>`count(case when ${claims.decision} is null then 1 end)`,

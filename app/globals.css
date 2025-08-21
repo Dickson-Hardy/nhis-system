@@ -4,40 +4,58 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated design tokens to use official NHIA brand colors */
-  --background: oklch(1 0 0); /* #ffffff - Dashboard background */
+  /* Official NHIA Brand Colors from Brand Guidelines */
+  --background: oklch(1 0 0); /* #FFFFFF - Pure White */
   --foreground: oklch(0.205 0 0); /* #1f2937 - Main text color */
   --card: oklch(0.97 0 0); /* #f1f5f9 - Card background */
   --card-foreground: oklch(0.205 0 0); /* #1f2937 - Card text color */
-  --popover: oklch(1 0 0); /* #ffffff - Popover background */
+  --popover: oklch(1 0 0); /* #FFFFFF - Popover background */
   --popover-foreground: oklch(0.205 0 0); /* #1f2937 - Popover text color */
-  --primary: oklch(0.35 0.12 240); /* #104D7F - NHIA Blue primary */
-  --primary-foreground: oklch(1 0 0); /* #ffffff - Text on primary buttons */
+  
+  /* Primary Colors - NHIA Green #088C17 */
+  --primary: oklch(0.35 0.12 140); /* #088C17 - NHIA Green primary */
+  --primary-foreground: oklch(1 0 0); /* #FFFFFF - Text on primary buttons */
+  
+  /* Secondary Colors - Deep Forest Green #003C06 */
   --secondary: oklch(0.15 0.08 140); /* #003C06 - Deep Forest Green secondary */
-  --secondary-foreground: oklch(1 0 0); /* #ffffff - Text on secondary buttons */
-  --muted: oklch(0.945 0 0); /* #f1f5f9 - Light grey muted background */
-  --muted-foreground: oklch(0.45 0 0); /* #6b7280 - Dark grey text on muted backgrounds */
+  --secondary-foreground: oklch(1 0 0); /* #FFFFFF - Text on secondary buttons */
+  
+  /* NHIA Blue #104D7F */
   --accent: oklch(0.35 0.12 240); /* #104D7F - NHIA Blue accent */
-  --accent-foreground: oklch(1 0 0); /* #ffffff - Text on accent backgrounds */
+  --accent-foreground: oklch(1 0 0); /* #FFFFFF - Text on accent backgrounds */
+  
+  /* Neutral Grey #808080 */
+  --muted: oklch(0.556 0 0); /* #808080 - Neutral Grey muted background */
+  --muted-foreground: oklch(0.45 0 0); /* #6b7280 - Dark grey text on muted backgrounds */
+  
+  /* Status Colors */
   --destructive: oklch(0.577 0.245 27.325); /* #ef4444 - Error messages */
-  --destructive-foreground: oklch(1 0 0); /* #ffffff - Text on destructive buttons */
+  --destructive-foreground: oklch(1 0 0); /* #FFFFFF - Text on destructive buttons */
+  
+  /* Interface Colors */
   --border: oklch(0.85 0 0); /* #d1d5db - Border color */
   --input: oklch(0.97 0 0); /* #f1f5f9 - Input field background */
-  --ring: oklch(0.35 0.12 240 / 0.5); /* NHIA Blue focus ring */
-  --chart-1: oklch(0.35 0.12 240); /* #104D7F - NHIA Blue chart color */
+  --ring: oklch(0.35 0.12 140 / 0.5); /* NHIA Green focus ring */
+  
+  /* Chart Colors using NHIA Brand Palette */
+  --chart-1: oklch(0.35 0.12 140); /* #088C17 - NHIA Green chart color */
   --chart-2: oklch(0.15 0.08 140); /* #003C06 - Deep Forest Green chart color */
   --chart-3: oklch(0.556 0 0); /* #808080 - Neutral Grey chart color */
-  --chart-4: oklch(0.577 0.245 27.325); /* #ef4444 - Error chart color */
-  --chart-5: oklch(0.4 0.1 200); /* Complementary blue for charts */
+  --chart-4: oklch(0.35 0.12 240); /* #104D7F - NHIA Blue chart color */
+  --chart-5: oklch(0.577 0.245 27.325); /* #ef4444 - Error chart color */
+  
+  /* Layout */
   --radius: 0.375rem; /* Rounded corners */
-  --sidebar: oklch(0.97 0 0); /* #f1f5f9 - Sidebar background */
-  --sidebar-foreground: oklch(0.205 0 0); /* #1f2937 - Sidebar text color */
-  --sidebar-primary: oklch(0.35 0.12 240); /* #104D7F - NHIA Blue sidebar primary */
-  --sidebar-primary-foreground: oklch(1 0 0); /* #ffffff - Text on primary sidebar elements */
-  --sidebar-accent: oklch(0.15 0.08 140); /* #003C06 - Deep Forest Green sidebar accent */
-  --sidebar-accent-foreground: oklch(1 0 0); /* #ffffff - Text on sidebar accent elements */
-  --sidebar-border: oklch(0.85 0 0); /* #d1d5db - Sidebar border color */
-  --sidebar-ring: oklch(0.35 0.12 240 / 0.5); /* NHIA Blue focus ring for sidebar */
+  
+  /* Sidebar Colors using NHIA Brand */
+  --sidebar: oklch(0.35 0.12 140); /* #088C17 - NHIA Green sidebar background */
+  --sidebar-foreground: oklch(1 0 0); /* #FFFFFF - Sidebar text color */
+  --sidebar-primary: oklch(0.15 0.08 140); /* #003C06 - Deep Forest Green sidebar primary */
+  --sidebar-primary-foreground: oklch(1 0 0); /* #FFFFFF - Text on primary sidebar elements */
+  --sidebar-accent: oklch(0.35 0.12 240); /* #104D7F - NHIA Blue sidebar accent */
+  --sidebar-accent-foreground: oklch(1 0 0); /* #FFFFFF - Text on sidebar accent elements */
+  --sidebar-border: oklch(0.15 0.08 140); /* #003C06 - Deep Forest Green sidebar border */
+  --sidebar-ring: oklch(0.35 0.12 140 / 0.5); /* NHIA Green focus ring for sidebar */
 }
 
 .dark {
@@ -47,32 +65,39 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.145 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.45 0.15 240); /* Lighter NHIA Blue for dark mode */
+  
+  /* Dark mode maintains NHIA brand colors but with better contrast */
+  --primary: oklch(0.45 0.15 140); /* Lighter NHIA Green for dark mode */
   --primary-foreground: oklch(0.145 0 0);
   --secondary: oklch(0.25 0.1 140); /* Lighter Deep Forest Green for dark mode */
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.45 0.15 240); /* Lighter NHIA Blue accent for dark mode */
   --accent-foreground: oklch(0.145 0 0);
+  
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
   --destructive: oklch(0.396 0.141 25.723);
   --destructive-foreground: oklch(0.637 0.237 25.331);
   --border: oklch(0.269 0 0);
   --input: oklch(0.269 0 0);
   --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.45 0.15 240); /* Lighter NHIA Blue for dark mode charts */
+  
+  /* Dark mode charts maintain NHIA brand identity */
+  --chart-1: oklch(0.45 0.15 140); /* Lighter NHIA Green for dark mode charts */
   --chart-2: oklch(0.25 0.1 140); /* Lighter Deep Forest Green for dark mode charts */
   --chart-3: oklch(0.556 0 0); /* Neutral Grey remains same */
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
+  --chart-4: oklch(0.45 0.15 240); /* Lighter NHIA Blue for dark mode charts */
+  --chart-5: oklch(0.627 0.265 303.9);
+  
+  /* Dark sidebar maintains NHIA brand */
+  --sidebar: oklch(0.25 0.1 140); /* Darker Deep Forest Green for dark sidebar */
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.45 0.15 240); /* Lighter NHIA Blue for dark sidebar */
+  --sidebar-primary: oklch(0.35 0.12 140); /* NHIA Green for dark sidebar primary */
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.25 0.1 140); /* Lighter Deep Forest Green for dark sidebar */
+  --sidebar-accent: oklch(0.35 0.12 240); /* NHIA Blue for dark sidebar accent */
   --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --sidebar-border: oklch(0.15 0.08 140); /* Deep Forest Green border */
+  --sidebar-ring: oklch(0.35 0.12 140 / 0.5);
 }
 
 @theme inline {
@@ -118,7 +143,57 @@
   * {
     @apply border-border outline-ring/50;
   }
+  
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-poppins), 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  
+  /* NHIA Typography Guidelines - Poppins Font Family */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+    font-family: var(--font-poppins), 'Poppins', sans-serif;
+  }
+  
+  /* Heading Text - Poppins Bold */
+  h1 { 
+    @apply text-4xl lg:text-5xl font-bold; 
+    font-weight: 700;
+  }
+  h2 { 
+    @apply text-3xl lg:text-4xl font-bold; 
+    font-weight: 700;
+  }
+  h3 { 
+    @apply text-2xl lg:text-3xl font-semibold; 
+    font-weight: 600;
+  }
+  h4 { 
+    @apply text-xl lg:text-2xl font-semibold; 
+    font-weight: 600;
+  }
+  h5 { 
+    @apply text-lg lg:text-xl font-medium; 
+    font-weight: 500;
+  }
+  h6 { 
+@apply text-base lg:text-lg font-medium; 
+    font-weight: 500;
+  }
+  
+  /* Body Text - Poppins Light */
+  p, span, div, li, td, th {
+    font-family: var(--font-poppins), 'Poppins', sans-serif;
+    font-weight: 300;
+  }
+  
+  /* Medium weight for emphasis */
+  .font-medium {
+    font-weight: 500;
+  }
+  
+  /* Bold weight for strong emphasis */
+  .font-bold {
+    font-weight: 700;
   }
 }

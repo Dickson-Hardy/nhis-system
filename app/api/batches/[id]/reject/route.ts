@@ -5,9 +5,9 @@ import { verifyToken } from "@/lib/auth"
 import { sendNotification } from "@/lib/notifications"
 
 // PUT /api/batches/[id]/reject - Reject batch
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const token = request.cookies.get("token")?.value
+    const token = request.cookies.get("auth-token")?.value
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -17,7 +17,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: "Access denied" }, { status: 403 })
     }
 
-    const batchId = Number.parseInt(params.id)
+    const { id } = await params
+    const batchId = Number.parseInt(id)
     const { reason, remarks } = await request.json()
 
     if (!reason) {

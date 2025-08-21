@@ -154,7 +154,10 @@ export async function GET(request: NextRequest) {
       const parsedBatchId = Number.parseInt(batchId)
       if (!isNaN(parsedBatchId)) {
         // Find the batch number for this batch ID
-        const batch = await db.select().from(batches).where(eq(batches.id, parsedBatchId)).limit(1)
+        const batch = await db.select({
+          id: batches.id,
+          batchNumber: batches.batchNumber
+        }).from(batches).where(eq(batches.id, parsedBatchId)).limit(1)
         if (batch.length > 0) {
           whereConditions.push(eq(claims.batchNumber, batch[0].batchNumber))
         }
@@ -290,7 +293,10 @@ export async function POST(request: NextRequest) {
     // Get batch information to validate and update
     let batchNumber = body.batchNumber
     if (body.batchId) {
-      const batch = await db.select().from(batches).where(eq(batches.id, body.batchId)).limit(1)
+      const batch = await db.select({
+        id: batches.id,
+        batchNumber: batches.batchNumber
+      }).from(batches).where(eq(batches.id, body.batchId)).limit(1)
       if (batch.length > 0) {
         batchNumber = batch[0].batchNumber
       }
@@ -366,7 +372,10 @@ export async function POST(request: NextRequest) {
 
     // Update batch totals if batchId is provided
     if (body.batchId) {
-      const batchClaims = await db.select().from(claims).where(eq(claims.batchNumber, batchNumber))
+      const batchClaims = await db.select({
+        id: claims.id,
+        totalCostOfCare: claims.totalCostOfCare
+      }).from(claims).where(eq(claims.batchNumber, batchNumber))
       const totalClaims = batchClaims.length
       const totalAmount = batchClaims.reduce((sum, claim) => sum + (parseFloat(claim.totalCostOfCare || "0")), 0)
       

@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { db, batches, tpas, claims } from "@/lib/db"
-import { eq } from "drizzle-orm"
+import { eq, count, sum } from "drizzle-orm"
 import { verifyToken } from "@/lib/auth"
 
 // GET /api/batches/[id] - Fetch individual batch details
@@ -52,7 +52,46 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Get claims in this batch
-    const batchClaims = await db.select().from(claims).where(eq(claims.batchNumber, batch.batchNumber))
+    const batchClaims = await db.select({
+      id: claims.id,
+      serialNumber: claims.serialNumber,
+      uniqueBeneficiaryId: claims.uniqueBeneficiaryId,
+      uniqueClaimId: claims.uniqueClaimId,
+      tpaId: claims.tpaId,
+      facilityId: claims.facilityId,
+      batchNumber: claims.batchNumber,
+      hospitalNumber: claims.hospitalNumber,
+      dateOfAdmission: claims.dateOfAdmission,
+      beneficiaryName: claims.beneficiaryName,
+      dateOfBirth: claims.dateOfBirth,
+      age: claims.age,
+      address: claims.address,
+      phoneNumber: claims.phoneNumber,
+      nin: claims.nin,
+      dateOfTreatment: claims.dateOfTreatment,
+      dateOfDischarge: claims.dateOfDischarge,
+      primaryDiagnosis: claims.primaryDiagnosis,
+      secondaryDiagnosis: claims.secondaryDiagnosis,
+      treatmentProcedure: claims.treatmentProcedure,
+      quantity: claims.quantity,
+      cost: claims.cost,
+      dateOfClaimSubmission: claims.dateOfClaimSubmission,
+      monthOfSubmission: claims.monthOfSubmission,
+      costOfInvestigation: claims.costOfInvestigation,
+      costOfProcedure: claims.costOfProcedure,
+      costOfMedication: claims.costOfMedication,
+      costOfOtherServices: claims.costOfOtherServices,
+      totalCostOfCare: claims.totalCostOfCare,
+      approvedCostOfCare: claims.approvedCostOfCare,
+      decision: claims.decision,
+      reasonForRejection: claims.reasonForRejection,
+      dateOfClaimsPayment: claims.dateOfClaimsPayment,
+      tpaRemarks: claims.tpaRemarks,
+      status: claims.status,
+      createdBy: claims.createdBy,
+      createdAt: claims.createdAt,
+      updatedAt: claims.updatedAt,
+    }).from(claims).where(eq(claims.batchNumber, batch.batchNumber))
 
     return NextResponse.json({
       batch: {

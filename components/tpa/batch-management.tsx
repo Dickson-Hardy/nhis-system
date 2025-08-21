@@ -16,6 +16,7 @@ import { useAuth } from "@/components/auth/auth-provider"
 import { ExcelUpload } from "./excel-upload"
 import { ManualClaimEntry } from "./manual-claim-entry"
 import { BatchClaimsView } from "./batch-claims-view"
+import { BatchClosureModal, BatchClosureData } from "./batch-closure-modal"
 import FacilitySelector from "./facility-selector"
 
 export default function BatchManagement() {
@@ -26,6 +27,7 @@ export default function BatchManagement() {
   const [isSmartUploadOpen, setIsSmartUploadOpen] = useState(false)
   const [isManualEntryOpen, setIsManualEntryOpen] = useState(false)
   const [isBatchViewOpen, setIsBatchViewOpen] = useState(false)
+  const [isClosureModalOpen, setIsClosureModalOpen] = useState(false)
   const [selectedBatch, setSelectedBatch] = useState<any>(null)
   const [batchNumber, setBatchNumber] = useState("")
   const [selectedFacility, setSelectedFacility] = useState<number | undefined>()
@@ -38,14 +40,14 @@ export default function BatchManagement() {
         return "bg-blue-100 text-blue-800 border-blue-300"
       case "submitted":
         return "bg-yellow-100 text-yellow-800 border-yellow-300"
-      case "submitted_awaiting_verification":
-        return "bg-orange-100 text-orange-800 border-orange-300"
+      case "closed":
+        return "bg-green-100 text-green-800 border-green-300"
       case "under_review":
         return "bg-purple-100 text-purple-800 border-purple-300"
       case "verified":
-        return "bg-green-100 text-green-800 border-green-300"
-      case "verified_awaiting_payment":
         return "bg-teal-100 text-teal-800 border-teal-300"
+      case "verified_awaiting_payment":
+        return "bg-orange-100 text-orange-800 border-orange-300"
       case "verified_paid":
         return "bg-emerald-100 text-emerald-800 border-emerald-300"
       case "rejected":
@@ -61,8 +63,8 @@ export default function BatchManagement() {
         return <Package className="h-3 w-3" />
       case "submitted":
         return <Upload className="h-3 w-3" />
-      case "submitted_awaiting_verification":
-        return <Clock className="h-3 w-3" />
+      case "closed":
+        return <CheckCircle className="h-3 w-3" />
       case "under_review":
         return <AlertCircle className="h-3 w-3" />
       case "verified":
@@ -83,11 +85,11 @@ export default function BatchManagement() {
       case "draft":
         return "Draft"
       case "submitted":
-        return "Submitted"
-      case "submitted_awaiting_verification":
-        return "Awaiting Verification"
+        return "Submitted to NHIS"
+      case "closed":
+        return "Closed"
       case "under_review":
-        return "Under Review"
+        return "Under NHIS Review"
       case "verified":
         return "Verified"
       case "verified_awaiting_payment":
@@ -121,6 +123,48 @@ export default function BatchManagement() {
       console.error("Failed to create batch:", error)
     } finally {
       setIsCreating(false)
+    }
+  }
+
+  const handleBatchClosure = async (closureData: BatchClosureData) => {
+    if (!selectedBatch) return
+
+    try {
+      const formData = new FormData()
+      formData.append("reviewSummary", closureData.reviewSummary)
+      formData.append("paymentJustification", closureData.paymentJustification)
+      formData.append("paidAmount", closureData.paidAmount.toString())
+      formData.append("beneficiariesPaid", closureData.beneficiariesPaid.toString())
+      formData.append("paymentDate", closureData.paymentDate)
+      formData.append("paymentMethod", closureData.paymentMethod)
+      formData.append("paymentReference", closureData.paymentReference)
+      formData.append("remarks", closureData.remarks || "")
+      formData.append("tpaSignature", closureData.tpaSignature)
+      formData.append("userId", user?.id?.toString() || "")
+      
+      if (closureData.forwardingLetterFile) {
+        formData.append("forwardingLetter", closureData.forwardingLetterFile)
+      }
+
+      const response = await fetch(`/api/batches/${selectedBatch.id}/close`, {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to close batch")
+      }
+
+      const result = await response.json()
+      console.log("Batch closed successfully:", result)
+      
+      // Refresh the batches list
+      window.location.reload()
+      
+    } catch (error) {
+      console.error("Error closing batch:", error)
+      throw error
     }
   }
 
@@ -178,14 +222,29 @@ export default function BatchManagement() {
         <Card className="dashboard-card">
           <CardContent className="p-4">
             <div className="dashboard-card-header">
-              <p className="dashboard-card-title">Submitted Batches</p>
+              <p className="dashboard-card-title">Submitted to NHIS</p>
               <CheckCircle className="h-4 w-4 text-green-500" />
             </div>
             <div className="space-y-1">
               <p className="dashboard-card-value text-green-600">
                 {(batches || []).filter(b => b.status === 'submitted').length}
               </p>
-              <p className="dashboard-card-change">Under review</p>
+              <p className="dashboard-card-change">Awaiting TPA closure</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="dashboard-card">
+          <CardContent className="p-4">
+            <div className="dashboard-card-header">
+              <p className="dashboard-card-title">Closed Batches</p>
+              <FileCheck className="h-4 w-4 text-emerald-500" />
+            </div>
+            <div className="space-y-1">
+              <p className="dashboard-card-value text-emerald-600">
+                {(batches || []).filter(b => b.status === 'closed').length}
+              </p>
+              <p className="dashboard-card-change">Completed</p>
             </div>
           </CardContent>
         </Card>
@@ -455,9 +514,9 @@ export default function BatchManagement() {
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-md">
                               <DialogHeader>
-                                <DialogTitle>Submit Batch for Review</DialogTitle>
+                                <DialogTitle>Submit Batch to NHIS</DialogTitle>
                                 <DialogDescription>
-                                  Submit this batch to NHIS for review and processing.
+                                  Submit this batch to NHIS for oversight and record-keeping.
                                 </DialogDescription>
                               </DialogHeader>
                               <div className="space-y-4">
@@ -497,13 +556,22 @@ export default function BatchManagement() {
                                     className="bg-[#104D7F] hover:bg-[#0d3f6b]"
                                     onClick={async () => {
                                       try {
-                                        // Submit batch logic
-                                        console.log('Submitting batch:', batch.id)
-                                        // Call API to update batch status to 'submitted_awaiting_verification'
-                                        // Refresh data
-                                        window.location.reload()
+                                        const response = await fetch(`/api/batches/${batch.id}/submit`, {
+                                          method: 'POST',
+                                          credentials: 'include'
+                                        })
+                                        
+                                        if (response.ok) {
+                                          // Refresh batches data
+                                          window.location.reload()
+                                        } else {
+                                          const errorData = await response.json()
+                                          console.error('Failed to submit batch:', errorData.error)
+                                          alert(`Failed to submit batch: ${errorData.error}`)
+                                        }
                                       } catch (error) {
                                         console.error('Failed to submit batch:', error)
+                                        alert('Failed to submit batch. Please try again.')
                                       }
                                     }}
                                   >
@@ -514,6 +582,20 @@ export default function BatchManagement() {
                               </div>
                             </DialogContent>
                           </Dialog>
+                        )}
+
+                        {/* Close Batch Button - for submitted batches (TPA autonomous closure) */}
+                        {batch.status === "submitted" && (
+                          <Button 
+                            className="btn-primary flex-1 justify-center mt-3 bg-green-600 hover:bg-green-700"
+                            onClick={() => {
+                              setSelectedBatch(batch)
+                              setIsClosureModalOpen(true)
+                            }}
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Close Batch & Submit Report
+                          </Button>
                         )}
 
                         {batch.status === "draft" && batch.totalClaims === 0 && (
@@ -644,6 +726,14 @@ export default function BatchManagement() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Batch Closure Modal */}
+      <BatchClosureModal
+        isOpen={isClosureModalOpen}
+        onClose={() => setIsClosureModalOpen(false)}
+        batch={selectedBatch || {}}
+        onClosurSubmit={handleBatchClosure}
+      />
     </div>
   )
 }

@@ -7,7 +7,9 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Eye, Check, X, Search } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Eye, Check, X, Search, FileText } from "lucide-react"
 
 interface Claim {
   id: number
@@ -16,9 +18,14 @@ interface Claim {
   facilityName: string
   tpaName: string
   totalCostOfCare: number
-  status: "pending" | "approved" | "rejected"
-  dateOfSubmission: string
+  approvedCostOfCare: number
+  status: string
+  decision: string
+  dateOfClaimSubmission: string
+  closedAt?: string
+  batchNumber: string
   primaryDiagnosis: string
+  tpaRemarks?: string
 }
 
 interface ClaimsReviewTableProps {
@@ -98,7 +105,8 @@ export function ClaimsReviewTable({ claims }: ClaimsReviewTableProps) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="closed">Closed (Pending Review)</SelectItem>
+                <SelectItem value="verified">Verified</SelectItem>
                 <SelectItem value="approved">Approved</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
               </SelectContent>
@@ -135,7 +143,7 @@ export function ClaimsReviewTable({ claims }: ClaimsReviewTableProps) {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-card-foreground">
-                    {new Date(claim.dateOfSubmission).toLocaleDateString()}
+                                        {new Date(claim.dateOfClaimSubmission).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">

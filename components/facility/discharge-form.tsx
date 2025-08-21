@@ -2,12 +2,22 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { toast } from "@/hooks/use-toast"
+
+interface Batch {
+  id: number
+  batchNumber: string
+  status: string
+  weekStartDate: string
+  weekEndDate: string
+}
 
 export function DischargeForm() {
   const [formData, setFormData] = useState({
@@ -30,7 +40,28 @@ export function DischargeForm() {
     costOfProcedure: "",
     costOfMedication: "",
     costOfOtherServices: "",
+    batchId: "",
+    status: "draft",
   })
+
+  const [batches, setBatches] = useState<Batch[]>([])
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    fetchAvailableBatches()
+  }, [])
+
+  const fetchAvailableBatches = async () => {
+    try {
+      const response = await fetch("/api/facility/batches?status=draft")
+      const data = await response.json()
+      if (response.ok) {
+        setBatches(data.batches || [])
+      }
+    } catch (error) {
+      console.error("Error fetching batches:", error)
+    }
+  }
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -44,10 +75,77 @@ export function DischargeForm() {
     return investigation + procedure + medication + otherServices
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle form submission
-    console.log("Discharge form submitted:", formData)
+    
+    try {
+      setLoading(true)
+      
+      // Calculate total cost
+      const totalCostOfCare = calculateTotalCost()
+      
+      const submissionData = {
+        ...formData,
+        totalCostOfCare: totalCostOfCare.toString(),
+        batchId: formData.batchId ? parseInt(formData.batchId) : undefined,
+      }
+      
+      const response = await fetch("/api/facility/claims", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(submissionData),
+      })
+      
+      const data = await response.json()
+      
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Discharge form saved successfully",
+        })
+        
+        // Reset form
+        setFormData({
+          uniqueBeneficiaryId: "",
+          hospitalNumber: "",
+          beneficiaryName: "",
+          dateOfBirth: "",
+          age: "",
+          address: "",
+          phoneNumber: "",
+          nin: "",
+          dateOfAdmission: "",
+          dateOfTreatment: "",
+          dateOfDischarge: "",
+          primaryDiagnosis: "",
+          secondaryDiagnosis: "",
+          treatmentProcedure: "",
+          quantity: "",
+          costOfInvestigation: "",
+          costOfProcedure: "",
+          costOfMedication: "",
+          costOfOtherServices: "",
+          batchId: "",
+          status: "draft",
+        })
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to save discharge form",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Network error while saving form",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -293,11 +391,62 @@ export function DischargeForm() {
             </div>
           </div>
 
+          {/* Batch Assignment Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-card-foreground border-b border-border pb-2">Batch Assignment</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="batchId">Assign to Batch (Optional)</Label>
+                <Select value={formData.batchId} onValueChange={(value) => handleInputChange("batchId", value)}>
+                  <SelectTrigger className="bg-input border-border">
+                    <SelectValue placeholder="Select a batch or leave unassigned" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No batch (will be assigned later)</SelectItem>
+                    {batches.map((batch) => (
+                      <SelectItem key={batch.id} value={batch.id.toString()}>
+                        {batch.batchNumber} (Week: {new Date(batch.weekStartDate).toLocaleDateString()} - {new Date(batch.weekEndDate).toLocaleDateString()})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select value={formData.status} onValueChange={(value) => handleInputChange("status", value)}>
+                  <SelectTrigger className="bg-input border-border">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {formData.batchId && (
+              <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>Note:</strong> This claim will be assigned to the selected batch and included in the batch submission to TPA.
+                </p>
+              </div>
+            )}
+          </div>
+
           <div className="flex gap-4 pt-6">
-            <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">
-              Save Discharge Form
+            <Button 
+              type="submit" 
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              disabled={loading}
+            >
+              {loading ? "Saving..." : "Save Discharge Form"}
             </Button>
-            <Button type="button" variant="outline" className="border-border bg-transparent">
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="border-border bg-transparent"
+              onClick={() => setFormData({...formData, status: "draft"})}
+            >
               Save as Draft
             </Button>
           </div>

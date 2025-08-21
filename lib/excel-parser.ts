@@ -119,7 +119,39 @@ function isValidPhoneNumber(phone: string): boolean {
 }
 
 export function generateExcelTemplate(): void {
-  // In a real implementation, this would generate and download an Excel template
-  // with all the required columns and sample data
-  console.log("Generating Excel template with required columns...")
+  // Create CSV template with required headers
+  const headers = [
+    "uniqueBeneficiaryId",
+    "hospitalNumber", 
+    "beneficiaryName",
+    "dateOfBirth",
+    "age",
+    "address",
+    "phoneNumber",
+    "nin",
+    "dateOfAdmission",
+    "dateOfTreatment", 
+    "dateOfDischarge",
+    "primaryDiagnosis",
+    "secondaryDiagnosis",
+    "treatmentProcedure",
+    "quantity",
+    "costOfInvestigation",
+    "costOfProcedure", 
+    "costOfMedication",
+    "costOfOtherServices"
+  ]
+  
+  const csvContent = headers.join(",") + "\n" +
+                     headers.map(() => "").join(",") + " # Example row - replace with actual data"
+  
+  const blob = new Blob([csvContent], { type: "text/csv" })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement("a")
+  link.href = url
+  link.download = "claims_template.csv"
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  window.URL.revokeObjectURL(url)
 }

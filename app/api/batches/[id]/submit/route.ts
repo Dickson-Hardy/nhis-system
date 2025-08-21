@@ -5,9 +5,9 @@ import { verifyToken } from "@/lib/auth"
 import { sendNotification } from "@/lib/notifications"
 
 // POST /api/batches/[id]/submit - Submit batch for review
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const token = request.cookies.get("token")?.value
+    const token = request.cookies.get("auth-token")?.value
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -17,10 +17,18 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "Access denied" }, { status: 403 })
     }
 
-    const batchId = Number.parseInt(params.id)
+    const { id } = await params
+    const batchId = Number.parseInt(id)
 
     // Get batch details
-    const batch = await db.select().from(batches).where(eq(batches.id, batchId))
+    const batch = await db.select({
+      id: batches.id,
+      batchNumber: batches.batchNumber,
+      tpaId: batches.tpaId,
+      status: batches.status,
+      totalClaims: batches.totalClaims,
+      totalAmount: batches.totalAmount
+    }).from(batches).where(eq(batches.id, batchId))
     if (batch.length === 0) {
       return NextResponse.json({ error: "Batch not found" }, { status: 404 })
     }
@@ -57,7 +65,15 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         totalAmount: totals[0].totalAmount || "0",
       })
       .where(eq(batches.id, batchId))
-      .returning()
+      .returning({
+        id: batches.id,
+        batchNumber: batches.batchNumber,
+        tpaId: batches.tpaId,
+        status: batches.status,
+        totalClaims: batches.totalClaims,
+        totalAmount: batches.totalAmount,
+        submittedAt: batches.submittedAt
+      })
 
     // Send notification to NHIS admin
     await sendNotification({

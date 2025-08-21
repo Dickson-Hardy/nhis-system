@@ -30,6 +30,23 @@ export interface BatchNotificationData {
   submittedDate: string
 }
 
+export interface BatchClosureNotificationData {
+  batchNumber: string
+  tpaName: string
+  facilityName: string
+  totalClaims: number
+  totalAmount: number
+  approvedAmount: number
+  rejectedAmount: number
+  approvedClaims: number
+  rejectedClaims: number
+  paymentJustification: string
+  reviewSummary: string
+  forwardingLetterUrl?: string
+  submittedDate: string
+  tpaSignedBy?: string
+}
+
 export class EmailService {
   private static instance: EmailService
   private fromEmail = process.env.FROM_EMAIL || "noreply@nhis.gov.ng"
@@ -120,6 +137,23 @@ export class EmailService {
       subject: "Password Reset Request - NHIS Portal",
       html: template,
     })
+  }
+
+  async sendBatchClosureNotification(
+    recipientEmail: string,
+    recipientName: string,
+    batchData: BatchClosureNotificationData,
+    attachmentUrl?: string
+  ): Promise<boolean> {
+    const template = this.getBatchClosureTemplate(recipientName, batchData)
+
+    const emailData: EmailData = {
+      to: [recipientEmail],
+      subject: `Batch Closure Report: ${batchData.batchNumber} - Payment Summary`,
+      html: template,
+    }
+
+    return this.sendEmail(emailData)
   }
 
   private getClaimStatusTemplate(recipientName: string, claimData: ClaimNotificationData): string {
@@ -453,6 +487,125 @@ export class EmailService {
         </body>
       </html>
     `
+  }
+
+  private getBatchClosureTemplate(recipientName: string, batchData: BatchClosureNotificationData): string {
+    const approvalRate = batchData.totalClaims > 0 
+      ? ((batchData.approvedClaims / batchData.totalClaims) * 100).toFixed(1) 
+      : '0'
+
+    return `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Closure Report - ${batchData.batchNumber}</title>
+  </head>
+  <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 700px; margin: 0 auto; padding: 20px;">
+    <div style="background: #f8f9fa; padding: 30px; border-radius: 10px; margin-bottom: 30px;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: #1f2937; margin: 0; font-size: 28px;">NHIS Portal</h1>
+        <p style="color: #6b7280; margin: 5px 0 0 0;">Batch Closure Report</p>
+      </div>
+      
+      <h2 style="color: #1f2937; margin-bottom: 20px;">Batch Processing Complete</h2>
+      
+      <p style="margin-bottom: 20px;">Dear ${recipientName},</p>
+      
+      <p style="margin-bottom: 20px;">
+        The batch <strong>${batchData.batchNumber}</strong> has been autonomously processed and closed by the TPA. 
+        This notification is provided for oversight and record-keeping purposes.
+      </p>
+      
+      <div style="background: white; padding: 25px; border-radius: 8px; border-left: 4px solid #10b981; margin: 25px 0;">
+        <h3 style="margin: 0 0 15px 0; color: #1f2937;">Batch Summary</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Batch Number:</td>
+            <td style="padding: 8px 0; color: #1f2937;">${batchData.batchNumber}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">TPA:</td>
+            <td style="padding: 8px 0; color: #1f2937;">${batchData.tpaName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Healthcare Facility:</td>
+            <td style="padding: 8px 0; color: #1f2937;">${batchData.facilityName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Total Claims:</td>
+            <td style="padding: 8px 0; color: #1f2937;">${batchData.totalClaims.toLocaleString()}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Total Amount:</td>
+            <td style="padding: 8px 0; color: #1f2937;">₦${batchData.totalAmount.toLocaleString()}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="background: white; padding: 25px; border-radius: 8px; border-left: 4px solid #3b82f6; margin: 25px 0;">
+        <h3 style="margin: 0 0 15px 0; color: #1f2937;">Payment Analysis</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Claims Approved:</td>
+            <td style="padding: 8px 0; color: #10b981; font-weight: bold;">${batchData.approvedClaims}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Claims Rejected:</td>
+            <td style="padding: 8px 0; color: #ef4444; font-weight: bold;">${batchData.rejectedClaims}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Approved Amount:</td>
+            <td style="padding: 8px 0; color: #10b981; font-weight: bold;">₦${batchData.approvedAmount.toLocaleString()}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Approval Rate:</td>
+            <td style="padding: 8px 0; color: #1f2937; font-weight: bold;">${approvalRate}%</td>
+          </tr>
+        </table>
+      </div>
+
+      ${batchData.paymentJustification ? `
+      <div style="background: white; padding: 25px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 25px 0;">
+        <h3 style="margin: 0 0 15px 0; color: #1f2937;">Payment Justification</h3>
+        <p style="margin: 0; color: #1f2937; line-height: 1.6;">${batchData.paymentJustification}</p>
+      </div>
+      ` : ''}
+
+      ${batchData.reviewSummary ? `
+      <div style="background: white; padding: 25px; border-radius: 8px; border-left: 4px solid #8b5cf6; margin: 25px 0;">
+        <h3 style="margin: 0 0 15px 0; color: #1f2937;">Review Summary</h3>
+        <p style="margin: 0; color: #1f2937; line-height: 1.6;">${batchData.reviewSummary}</p>
+      </div>
+      ` : ''}
+
+      ${batchData.forwardingLetterUrl ? `
+      <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 25px 0;">
+        <h4 style="margin: 0 0 10px 0; color: #1f2937;">📎 Forwarding Letter Attached</h4>
+        <p style="margin: 0; color: #6b7280; font-size: 14px;">
+          The official forwarding letter for this batch closure has been attached.
+        </p>
+        <a href="${batchData.forwardingLetterUrl}" 
+           style="display: inline-block; margin-top: 10px; color: #3b82f6; text-decoration: none; font-weight: bold;">
+          📄 View Forwarding Letter
+        </a>
+      </div>
+      ` : ''}
+
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${process.env.NEXT_PUBLIC_APP_URL}/login" 
+           style="background: #1f2937; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+          View in Portal
+        </a>
+      </div>
+      
+      <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px; text-align: center; color: #6b7280; font-size: 14px;">
+        <p>This is an automated batch closure report from the NHIS Portal.</p>
+        <p>© 2024 Nigerian Health Insurance Scheme. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+</html>`
   }
 
   private getStatusColor(status: string): string {

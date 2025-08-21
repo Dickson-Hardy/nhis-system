@@ -1,13 +1,18 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { GeistSans } from "geist/font/sans"
-import { GeistMono } from "geist/font/mono"
+import { Poppins } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/components/auth/auth-provider"
 
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-poppins",
+})
+
 export const metadata: Metadata = {
-  title: "NHIS Portal",
-  description: "Nigerian Health Insurance Scheme Management Portal",
+  title: "NHIA Portal",
+  description: "National Health Insurance Authority Management Portal",
   generator: "v0.app",
 }
 
@@ -21,13 +26,12 @@ export default function RootLayout({
       <head>
         <style>{`
 html {
-  font-family: ${GeistSans.style.fontFamily};
-  --font-sans: ${GeistSans.variable};
-  --font-mono: ${GeistMono.variable};
+  font-family: ${poppins.style.fontFamily};
+  --font-poppins: ${poppins.variable};
 }
         `}</style>
       </head>
-      <body>
+      <body className={poppins.variable}>
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
