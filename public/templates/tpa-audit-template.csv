@@ -1,0 +1,4 @@
+Claim ID,Beneficiary Name,Hospital Number,Date of Admission,Date of Discharge,Primary Diagnosis,Secondary Diagnosis,Procedure Cost,Treatment Cost,Medication Cost,Other Cost,Total Cost of Care,Batch Number,Status,TPA Decision,Approved Amount,Rejection Reason,TPA Remarks
+FAC001-202412-123456,John Doe,12345,2024-01-15,2024-01-20,"P/PROM O42; Preeclampsia O14.9",Gestational diabetes,80000,40000,20000,10000,150000,BATCH001,awaiting_verification,,,,
+FAC001-202412-123457,Jane Smith,12346,2024-01-16,2024-01-21,"Eclampsia O15; Antepartum haemorrhageO46.9",Hypertension,90000,50000,15000,10000,165000,BATCH001,awaiting_verification,,,,
+FAC001-202412-123458,Mary Johnson,12347,2024-01-17,2024-01-22,"Postpartum haemorrhageO72.0-O72.2",Anemia,70000,60000,25000,15000,170000,BATCH001,awaiting_verification,,,,

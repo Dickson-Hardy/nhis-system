@@ -11,6 +11,8 @@ import { Plus, FileText, Send, Package, Calendar } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { format } from "date-fns"
 import { StatusWorkflow } from "@/components/tpa/status-workflow"
+import { RejectedClaimsWidget } from "@/components/facility/rejected-claims-widget"
+import { realTimeSync } from "@/lib/real-time-sync"
 
 interface DashboardStats {
   totalPatients: number
@@ -41,7 +43,50 @@ export function FacilityDashboardClient() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Initialize real-time sync
+    const initRealTimeSync = () => {
+      // Subscribe to real-time updates
+      realTimeSync.subscribe('claim_updated', (data) => {
+        // Refresh dashboard data when claims are updated
+        fetchDashboardData()
+        toast({
+          title: "Claim Updated",
+          description: `Claim ${data.id} status updated to ${data.status}`,
+        })
+      })
+
+      realTimeSync.subscribe('batch_updated', (data) => {
+        // Refresh dashboard data when batches are updated
+        fetchDashboardData()
+        toast({
+          title: "Batch Updated",
+          description: `Batch ${data.id} status updated to ${data.status}`,
+        })
+      })
+
+      realTimeSync.subscribe('notification_received', (data) => {
+        // Show notification when new notifications arrive
+        toast({
+          title: data.title,
+          description: data.message,
+        })
+      })
+
+      // For development/testing, simulate real-time updates
+      if (process.env.NODE_ENV === 'development') {
+        realTimeSync.simulateRealTimeUpdates()
+      }
+    }
+
+    initRealTimeSync()
     fetchDashboardData()
+
+    // Cleanup subscriptions
+    return () => {
+      realTimeSync.unsubscribe('claim_updated', () => {})
+      realTimeSync.unsubscribe('batch_updated', () => {})
+      realTimeSync.unsubscribe('notification_received', () => {})
+    }
   }, [])
 
   const fetchDashboardData = async () => {
@@ -129,6 +174,48 @@ export function FacilityDashboardClient() {
             />
           </div>
 
+          {/* Batch-First Workflow Explanation */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border-2 border-blue-200 p-6 shadow-xl">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
+                <Package className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-blue-900">Batch-First Workflow</h3>
+                <p className="text-blue-700">Claims must be created within batches for organized processing</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white/80 rounded-lg p-4 border border-blue-200">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <span className="text-blue-600 font-bold text-sm">1</span>
+                  </div>
+                  <h4 className="font-semibold text-blue-900">Create Batch</h4>
+                </div>
+                <p className="text-sm text-blue-700">Start by creating a new batch with time period and type</p>
+              </div>
+              <div className="bg-white/80 rounded-lg p-4 border border-blue-200">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                    <span className="text-green-600 font-bold text-sm">2</span>
+                  </div>
+                  <h4 className="font-semibold text-green-900">Add Claims</h4>
+                </div>
+                <p className="text-sm text-green-700">Add discharge forms and claims to the open batch</p>
+              </div>
+              <div className="bg-white/80 rounded-lg p-4 border border-blue-200">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <span className="text-purple-600 font-bold text-sm">3</span>
+                  </div>
+                  <h4 className="font-semibold text-purple-900">Submit Batch</h4>
+                </div>
+                <p className="text-sm text-purple-700">Submit complete batch to TPA for review and payment</p>
+              </div>
+            </div>
+          </div>
+
           {/* Main Content Tabs */}
           <Tabs defaultValue="overview" className="space-y-6">
             <TabsList className="grid w-full grid-cols-2">
@@ -136,8 +223,21 @@ export function FacilityDashboardClient() {
               <TabsTrigger value="batches">Batch Management</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="overview" className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-2">
+                         <TabsContent value="overview" className="space-y-6">
+               {/* Rejected Claims Widget */}
+               <RejectedClaimsWidget 
+                 rejectedClaims={[]} // TODO: Fetch from API
+                 onViewClaim={(claimId) => {
+                   // TODO: Navigate to claim detail
+                   console.log('View claim:', claimId)
+                 }}
+                 onResubmitClaim={(claimId) => {
+                   // TODO: Handle resubmission
+                   console.log('Resubmit claim:', claimId)
+                 }}
+               />
+               
+               <div className="grid gap-6 md:grid-cols-2">
                 <Card className="bg-card border-border shadow-sm">
                   <CardHeader>
                     <CardTitle className="text-card-foreground flex items-center gap-2">
@@ -192,18 +292,6 @@ export function FacilityDashboardClient() {
                     <CardDescription>Common tasks and shortcuts</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <Button className="w-full justify-start bg-transparent" variant="outline" asChild>
-                      <Link href="/facility/discharge">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create New Discharge Form
-                      </Link>
-                    </Button>
-                    <Button className="w-full justify-start bg-transparent" variant="outline" asChild>
-                      <Link href="/facility/claims">
-                        <FileText className="h-4 w-4 mr-2" />
-                        View Patient Records
-                      </Link>
-                    </Button>
                     <Button 
                       className="w-full justify-start bg-transparent" 
                       variant="outline" 
@@ -213,7 +301,19 @@ export function FacilityDashboardClient() {
                       }}
                     >
                       <Package className="h-4 w-4 mr-2" />
-                      Manage Batches
+                      Create New Batch (Required First)
+                    </Button>
+                    <Button className="w-full justify-start bg-transparent" variant="outline" asChild>
+                      <Link href="/facility/discharge">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Claims to Batch
+                      </Link>
+                    </Button>
+                    <Button className="w-full justify-start bg-transparent" variant="outline" asChild>
+                      <Link href="/facility/claims">
+                        <FileText className="h-4 w-4 mr-2" />
+                        View Batch Claims
+                      </Link>
                     </Button>
                   </CardContent>
                 </Card>

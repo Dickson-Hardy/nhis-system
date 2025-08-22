@@ -126,12 +126,21 @@ export function FacilityBatchDashboard() {
   const fetchUnassignedClaims = async () => {
     try {
       const response = await fetch("/api/facility/claims?batchStatus=unassigned")
+      if (!response.ok) {
+        console.error("Error response:", response.status, response.statusText)
+        return
+      }
+      
       const data = await response.json()
-      if (response.ok) {
+      if (data && data.claims && Array.isArray(data.claims)) {
         setClaims(data.claims)
+      } else {
+        console.error("Invalid claims data structure:", data)
+        setClaims([])
       }
     } catch (error) {
       console.error("Error fetching unassigned claims:", error)
+      setClaims([])
     }
   }
 

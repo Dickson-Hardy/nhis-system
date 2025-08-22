@@ -9,11 +9,11 @@ interface TPABreakdownData {
   tpaName: string
   tpaId: number
   totalAmount: number
-  approvedAmount: number
+  paidAmount: number // Amount TPA paid to facilities
   totalClaims: number
   breakdown: Record<string, {
     amount: number
-    approvedAmount: number
+    paidAmount: number // Amount TPA paid
     count: number
   }>
 }
@@ -118,7 +118,7 @@ export function TPAFinancialBreakdownWidget({ tpaFinancialBreakdown, impactMetri
             <span>Claims Value</span>
           </CardTitle>
           <CardDescription className="text-green-100">
-            Sum of Total Cost of Care by TPA Name and Decision Status
+            TPA Payments to Facilities & NHIS Reimbursements by Decision Status
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6">
@@ -127,13 +127,13 @@ export function TPAFinancialBreakdownWidget({ tpaFinancialBreakdown, impactMetri
             {/* Decision: Verified and awaiting payment */}
             <div className="space-y-4">
               <div className="bg-blue-100 p-3 rounded-lg border border-blue-200">
-                <h3 className="font-semibold text-blue-900">Decision: Verified and awaiting payment</h3>
+                <h3 className="font-semibold text-blue-900">Decision: Verified & Paid by TPA - Awaiting NHIS Reimbursement</h3>
               </div>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-xs">TPA Name</TableHead>
-                    <TableHead className="text-xs text-right">Sum of Total Cost of Care</TableHead>
+                    <TableHead className="text-xs text-right">Amount TPA Paid to Facility</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -146,7 +146,7 @@ export function TPAFinancialBreakdownWidget({ tpaFinancialBreakdown, impactMetri
                     </TableRow>
                   ))}
                   <TableRow className="bg-blue-50 font-semibold">
-                    <TableCell>Grand Total</TableCell>
+                    <TableCell>Total TPA Payments</TableCell>
                     <TableCell className="text-right font-mono">
                       {formatCurrency(verifiedAwaitingPayment.reduce((sum, item) => sum + item.amount, 0))}
                     </TableCell>
@@ -158,13 +158,13 @@ export function TPAFinancialBreakdownWidget({ tpaFinancialBreakdown, impactMetri
             {/* Decision: (All) */}
             <div className="space-y-4">
               <div className="bg-green-100 p-3 rounded-lg border border-green-200">
-                <h3 className="font-semibold text-green-900">Decision: (All)</h3>
+                <h3 className="font-semibold text-green-900">Decision: All Statuses - TPA Payments & Reimbursements</h3>
               </div>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-xs">TPA Name</TableHead>
-                    <TableHead className="text-xs text-right">Sum of Total Cost of Care</TableHead>
+                    <TableHead className="text-xs text-right">Amount TPA Paid to Facility</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -179,7 +179,7 @@ export function TPAFinancialBreakdownWidget({ tpaFinancialBreakdown, impactMetri
                     </TableRow>
                   ))}
                   <TableRow className="bg-green-50 font-semibold">
-                    <TableCell>Grand Total</TableCell>
+                    <TableCell>Total TPA Payments</TableCell>
                     <TableCell className="text-right font-mono">
                       {formatCurrency(Object.values(totalByTPA).reduce((sum, data) => sum + data.totalAmount, 0))}
                     </TableCell>
@@ -234,9 +234,9 @@ export function TPAFinancialBreakdownWidget({ tpaFinancialBreakdown, impactMetri
               <TableRow>
                 <TableHead>TPA Name</TableHead>
                 <TableHead className="text-right">Total Submitted</TableHead>
-                <TableHead className="text-right">Verified and Paid</TableHead>
-                <TableHead className="text-right">Verified and Awaiting Payment</TableHead>
-                <TableHead className="text-right">Submitted and awaiting verification</TableHead>
+                <TableHead className="text-right">Verified & Paid by TPA</TableHead>
+                <TableHead className="text-right">Awaiting NHIS Reimbursement</TableHead>
+                <TableHead className="text-right">Awaiting TPA Verification</TableHead>
                 <TableHead className="text-right">Rejected</TableHead>
                 <TableHead className="text-right">Total Amount</TableHead>
               </TableRow>

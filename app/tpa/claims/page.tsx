@@ -1,71 +1,108 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  FileText,
-  Clock,
-  CheckCircle,
-  XCircle,
-  Search,
-  Filter,
-  Eye,
-  CheckSquare,
-  AlertTriangle,
-  Building,
-  Calendar,
-  Loader2,
-  Shield,
-} from "lucide-react"
-import { useClaims } from "@/hooks/use-claims"
-import { useState } from "react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { format } from "date-fns"
+import { Search, Filter, Download, Eye, Calculator, RefreshCw, FileText, AlertTriangle, ToggleLeft, ToggleRight, Clock, XCircle, CheckCircle, FileSpreadsheet } from "lucide-react"
+import { toast } from "@/hooks/use-toast"
+import { exportManager } from "@/lib/export-utils"
 import { StatusWorkflow } from "@/components/tpa/status-workflow"
+import { TPATreatmentProceduresModal } from "@/components/tpa/treatment-procedures-modal"
+import { downloadTemplate, availableTemplates } from "@/lib/template-downloads"
+
+interface Claim {
+  id: number
+  uniqueClaimId: string
+  beneficiaryName: string
+  hospitalNumber: string
+  uniqueBeneficiaryId: string
+  dateOfAdmission: string
+  dateOfTreatment: string
+  dateOfDischarge: string
+  primaryDiagnosis: string
+  treatmentProcedure: string
+  treatmentProcedures?: Array<{ name: string; cost: string; description: string }>
+  totalCostOfCare: string
+  status: string
+  facilityId: number
+  facilityName?: string
+  batchId: number | null
+  createdAt: string
+  updatedAt: string
+  batch?: {
+    id: number
+    batchNumber: string
+    status: string
+  }
+  batchNumber?: string
+  tpaName?: string
+  rejectionReason?: string
+  tpaRemarks?: string
+  secondaryDiagnosis?: string
+  originalFormat?: 'legacy' | 'expanded'
+  isTransformed?: boolean
+  procedureCost?: number
+  treatmentCost?: number
+  medicationCost?: number
+  otherCost?: number
+}
 
 export default function ClaimsManagementPage() {
-  const { claims, stats, loading, error, refetch } = useClaims()
+  const [claims, setClaims] = useState<Claim[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedTab, setSelectedTab] = useState("submitted")
-  const [selectedClaim, setSelectedClaim] = useState<any>(null)
-  const [isReviewOpen, setIsReviewOpen] = useState(false)
-  const [reviewData, setReviewData] = useState({
-    decision: "",
-    reasonForRejection: "",
-    approvedAmount: "",
-    remarks: "",
-  })
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [viewFormat, setViewFormat] = useState<'legacy' | 'expanded'>('expanded')
+  const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null)
+  const [showTreatmentProcedures, setShowTreatmentProcedures] = useState(false)
+
+  // Fetch claims data
+  const fetchClaims = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/tpa/claims')
+      if (response.ok) {
+        const data = await response.json()
+        setClaims(data.claims || [])
+      }
+    } catch (error) {
+      console.error('Error fetching claims:', error)
+      toast({
+        title: "Error",
+        description: "Failed to fetch claims data",
+        variant: "destructive"
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchClaims()
+  }, [])
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "submitted":
-        return { variant: "secondary" as const, icon: FileText, color: "text-blue-600", bgColor: "bg-blue-50" }
+        return <Badge variant="secondary">Submitted</Badge>
       case "awaiting_verification":
-        return { variant: "secondary" as const, icon: Clock, color: "text-orange-500", bgColor: "bg-orange-50" }
-      case "not_verified":
-        return { variant: "destructive" as const, icon: XCircle, color: "text-red-500", bgColor: "bg-red-50" }
+        return <Badge variant="secondary">Awaiting Verification</Badge>
       case "verified":
-        return { variant: "default" as const, icon: CheckCircle, color: "text-green-600", bgColor: "bg-green-50" }
-      case "verified_awaiting_payment":
-        return { variant: "secondary" as const, icon: CheckCircle, color: "text-purple-600", bgColor: "bg-purple-50" }
+        return <Badge variant="default">Verified</Badge>
       case "verified_paid":
-        return { variant: "default" as const, icon: CheckCircle, color: "text-green-700", bgColor: "bg-green-50" }
+        return <Badge variant="default">Paid</Badge>
+      case "rejected":
+        return <Badge variant="destructive">Rejected</Badge>
       default:
-        return { variant: "secondary" as const, icon: FileText, color: "text-gray-500", bgColor: "bg-gray-50" }
+        return <Badge variant="secondary">{status}</Badge>
     }
-  }
-
-  const formatStatus = (status: string) => {
-    return status
-      .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ")
   }
 
   const formatCurrency = (amount: string | number) => {
@@ -73,403 +110,303 @@ export default function ClaimsManagementPage() {
     return `₦${numAmount.toLocaleString()}`
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString()
+  // Filter claims based on search and filters
+  const filteredClaims = claims.filter((claim) => {
+    const matchesSearch = claim.beneficiaryName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         claim.uniqueClaimId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         claim.hospitalNumber?.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const matchesStatus = statusFilter === "all" || claim.status === statusFilter
+    
+    return matchesSearch && matchesStatus
+  })
+
+  // Get status statistics
+  const statusStats = {
+    submitted: claims.filter((claim) => claim.status === "submitted").length,
+    awaiting_verification: claims.filter((claim) => claim.status === "awaiting_verification").length,
+    verified: claims.filter((claim) => claim.status === "verified").length,
+    verified_paid: claims.filter((claim) => claim.status === "verified_paid").length,
+    rejected: claims.filter((claim) => claim.status === "rejected").length,
   }
 
-  const handleClaimReview = (claim: any) => {
-    setSelectedClaim(claim)
-    setReviewData({
-      decision: "",
-      reasonForRejection: "",
-      approvedAmount: claim.totalCostOfCare || "",
-      remarks: "",
-    })
-    setIsReviewOpen(true)
-  }
-
-  const handleReviewSubmit = async () => {
-    setIsProcessing(true)
+  const handleExportClaims = () => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      // Handle the review submission here
-      console.log("Review submitted:", { claim: selectedClaim, review: reviewData })
-      
-      // Close dialog and refresh data
-      setIsReviewOpen(false)
-      setSelectedClaim(null)
-      refetch()
-    } catch (error) {
-      console.error("Error submitting review:", error)
-    } finally {
-      setIsProcessing(false)
-    }
-  }
+      const exportData = filteredClaims.map(claim => ({
+        'Claim ID': claim.uniqueClaimId,
+        'Beneficiary Name': claim.beneficiaryName,
+        'Hospital Number': claim.hospitalNumber,
+        'Date of Admission': claim.dateOfAdmission,
+        'Date of Discharge': claim.dateOfDischarge,
+        'Primary Diagnosis': claim.primaryDiagnosis,
+        'Treatment Procedure': claim.treatmentProcedure,
+        'Total Cost of Care': formatCurrency(claim.totalCostOfCare),
+        'Status': claim.status,
+        'Format': claim.originalFormat || 'unknown'
+      }))
 
-  const claimsByStatus = {
-    submitted: claims.filter(c => c.status === "submitted"),
-    awaiting_verification: claims.filter(c => c.status === "awaiting_verification"),
-    not_verified: claims.filter(c => c.status === "not_verified"),
-    verified: claims.filter(c => c.status === "verified"),
-    verified_awaiting_payment: claims.filter(c => c.status === "verified_awaiting_payment"),
-    verified_paid: claims.filter(c => c.status === "verified_paid"),
+      const csvContent = exportManager.exportClaimsData(exportData, { format: 'csv' })
+      exportManager.downloadExport(csvContent, { 
+        format: 'csv', 
+        filename: `tpa-claims-${format(new Date(), 'yyyy-MM-dd')}` 
+      })
+      
+      toast({
+        title: "Export Successful",
+        description: "Claims exported successfully",
+      })
+    } catch (error) {
+      console.error('Export error:', error)
+      toast({
+        title: "Export Failed",
+        description: "Failed to export claims. Please try again.",
+        variant: "destructive"
+      })
+    }
   }
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
-        <div className="flex items-center justify-center py-12">
-          <div className="text-muted-foreground">Loading claims data...</div>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <RefreshCw className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading claims...</span>
       </div>
     )
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Professional Header */}
-      <div className="bg-gradient-to-br from-[#088C17] via-[#16a085] to-[#003C06] rounded-2xl border-0 p-8 shadow-2xl text-white">
-        <div className="flex items-center space-x-6">
-          <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
-            <Shield className="h-8 w-8 text-white drop-shadow-lg" />
-          </div>
-          <div>
-            <h1 className="text-4xl font-bold tracking-tight text-white mb-2 drop-shadow-lg">Claims Management</h1>
-            <p className="text-xl text-green-100 font-medium drop-shadow-md">
-              Professional claims workflow management and verification
-            </p>
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Claims Management</h1>
+          <p className="text-muted-foreground">Review and manage facility claims</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportClaims}>
+            <Download className="h-4 w-4 mr-2" />
+            Export Claims
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => downloadTemplate(availableTemplates.find(t => t.format === 'expanded')!)}
+            className="border-green-300 text-green-700 hover:bg-green-50"
+          >
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            Download Expanded Template
+          </Button>
+          <Button variant="outline" onClick={fetchClaims}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
         </div>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800 font-medium">{error}</p>
-        </div>
-      )}
+      {/* Status Workflow */}
+      <StatusWorkflow currentStatus="awaiting_verification" />
 
-      {/* Claims Management Interface */}
-      <Card className="shadow-xl border-2 border-gray-200 rounded-2xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200 p-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-6">
-              <div className="w-16 h-16 bg-[#088C17] rounded-2xl flex items-center justify-center shadow-xl border-2 border-[#003C06]">
-                <FileText className="h-8 w-8 text-white drop-shadow-lg" />
-              </div>
-              <div>
-                <CardTitle className="text-3xl font-bold text-gray-900">Claims by Verification Status</CardTitle>
-                <p className="text-gray-600 text-lg mt-2">Monitor and manage claim verification workflow</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
-                <Input 
-                  placeholder="Search claims..." 
-                  className="pl-14 w-80 h-14 text-lg border-2 border-gray-300 focus:border-[#088C17] focus:ring-[#088C17] rounded-xl" 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <Button variant="outline" size="lg" className="h-14 px-8 border-2 border-gray-300 hover:border-[#088C17] hover:bg-[#088C17]/5 rounded-xl text-lg font-semibold">
-                <Filter className="h-6 w-6 mr-3" />
-                Filter
+      {/* Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-blue-600">{statusStats.submitted}</div>
+            <p className="text-sm text-muted-foreground">Submitted</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-orange-600">{statusStats.awaiting_verification}</div>
+            <p className="text-sm text-muted-foreground">Awaiting Verification</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-green-600">{statusStats.verified}</div>
+            <p className="text-sm text-muted-foreground">Verified</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-purple-600">{statusStats.verified_paid}</div>
+            <p className="text-sm text-muted-foreground">Paid</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-red-600">{statusStats.rejected}</div>
+            <p className="text-sm text-muted-foreground">Rejected</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Format Toggle */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>View Format</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Legacy</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setViewFormat(viewFormat === 'legacy' ? 'expanded' : 'legacy')}
+                className="flex items-center gap-2"
+              >
+                {viewFormat === 'legacy' ? <ToggleLeft className="h-4 w-4" /> : <ToggleRight className="h-4 w-4" />}
+                {viewFormat === 'legacy' ? 'Legacy' : 'Expanded'}
               </Button>
+              <span className="text-sm text-muted-foreground">Expanded</span>
+            </div>
+          </CardTitle>
+          <CardDescription>
+            {viewFormat === 'legacy' 
+              ? 'Showing simplified view with basic claim information'
+              : 'Showing detailed view with treatment procedures breakdown'
+            }
+          </CardDescription>
+        </CardHeader>
+      </Card>
+
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filters</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="text-sm font-medium">Search</label>
+              <Input
+                placeholder="Search by name, claim ID, or hospital number..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Status</label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="submitted">Submitted</SelectItem>
+                  <SelectItem value="awaiting_verification">Awaiting Verification</SelectItem>
+                  <SelectItem value="verified">Verified</SelectItem>
+                  <SelectItem value="verified_paid">Paid</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="p-8">
-          {/* Status Workflow Visualization */}
-          <div className="mb-8">
-            <StatusWorkflow 
-              currentStatus={selectedTab} 
-              className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200"
-            />
-          </div>
-          
-          <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 h-16 bg-gray-100 p-2 rounded-2xl mb-8">
-              <TabsTrigger value="submitted" className="text-lg font-semibold text-gray-700 data-[state=active]:bg-[#088C17] data-[state=active]:text-white data-[state=active]:drop-shadow-md rounded-xl transition-all duration-200">
-                Submitted ({stats.submitted})
-              </TabsTrigger>
-              <TabsTrigger value="awaiting_verification" className="text-lg font-semibold text-gray-700 data-[state=active]:bg-[#088C17] data-[state=active]:text-white data-[state=active]:drop-shadow-md rounded-xl transition-all duration-200">
-                Awaiting ({stats.awaitingVerification})
-              </TabsTrigger>
-              <TabsTrigger value="verified" className="text-lg font-semibold text-gray-700 data-[state=active]:bg-[#088C17] data-[state=active]:text-white data-[state=active]:drop-shadow-md rounded-xl transition-all duration-200">
-                Verified ({stats.verified})
-              </TabsTrigger>
-              <TabsTrigger value="verified_awaiting_payment" className="text-lg font-semibold text-gray-700 data-[state=active]:bg-[#088C17] data-[state=active]:text-white data-[state=active]:drop-shadow-md rounded-xl transition-all duration-200">
-                Payment ({stats.verifiedAwaitingPayment})
-              </TabsTrigger>
-            </TabsList>
-
-            {["submitted", "awaiting_verification", "verified", "verified_awaiting_payment"].map((status) => (
-              <TabsContent key={status} value={status} className="space-y-6">
-                {claimsByStatus[status as keyof typeof claimsByStatus].length === 0 ? (
-                  <div className="text-center py-16 text-gray-600">
-                    <FileText className="h-20 w-20 mx-auto mb-6 text-gray-400" />
-                    <p className="text-2xl font-medium">No {formatStatus(status).toLowerCase()} claims found.</p>
-                    <p className="text-gray-500 mt-3 text-lg">Claims will appear here once they are processed.</p>
-                  </div>
-                ) : (
-                  claimsByStatus[status as keyof typeof claimsByStatus]
-                    .filter((claim) => 
-                      claim.uniqueClaimId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      claim.beneficiaryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      claim.facility.name.toLowerCase().includes(searchTerm.toLowerCase())
-                    )
-                    .map((claim) => (
-                      <div
-                        key={claim.id}
-                        className="flex items-center justify-between p-8 border-2 border-gray-200 rounded-2xl hover:bg-gray-50 transition-all duration-200 hover:shadow-xl group"
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-6">
-                            <div className="w-16 h-16 bg-[#088C17]/10 rounded-2xl flex items-center justify-center group-hover:bg-[#088C17]/20 transition-colors duration-200">
-                              <Building className="h-8 w-8 text-[#088C17]" />
-                            </div>
-                            <div>
-                              <p className="text-2xl font-bold text-gray-900">{claim.uniqueClaimId}</p>
-                              <p className="text-xl text-gray-700 font-semibold">{claim.beneficiaryName}</p>
-                            </div>
-                          </div>
-                          <p className="text-lg text-gray-600 mt-3 font-medium">{claim.facility.name}</p>
-                          <p className="text-base text-gray-600 mt-2">
-                            <Calendar className="h-4 w-4 inline mr-2" />
-                            Admitted: {formatDate(claim.dateOfAdmission)} • {claim.primaryDiagnosis}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-3xl font-bold text-gray-900 mb-3">{formatCurrency(claim.totalCostOfCare)}</p>
-                          <div className="flex items-center space-x-4">
-                            <Badge variant={getStatusBadge(claim.status).variant} className="text-base font-semibold px-6 py-3 rounded-xl">
-                              {(() => {
-                                const IconComponent = getStatusBadge(claim.status).icon
-                                return <IconComponent className="h-5 w-5 mr-2" />
-                              })()}
-                              {formatStatus(claim.status)}
-                            </Badge>
-                            {(status === "submitted" || status === "awaiting_verification") && (
-                              <div className="flex items-center space-x-3">
-                                <Button 
-                                  size="lg" 
-                                  variant="outline" 
-                                  className="h-12 px-6 border-2 border-gray-300 hover:border-[#088C17] hover:bg-[#088C17]/5 transition-all duration-200 rounded-xl"
-                                  onClick={() => setSelectedClaim(claim)}
-                                >
-                                  <Eye className="h-5 w-5 mr-2 text-gray-600" />
-                                  View
-                                </Button>
-                                <Button 
-                                  size="lg" 
-                                  className="bg-[#088C17] hover:bg-[#003C06] shadow-xl h-12 px-8 font-bold transition-all duration-200 transform hover:scale-105 rounded-xl"
-                                  onClick={() => handleClaimReview(claim)}
-                                >
-                                  {status === "submitted" ? (
-                                    <>
-                                      <CheckSquare className="h-5 w-5 mr-2" />
-                                      Verify
-                                    </>
-                                  ) : (
-                                    <>
-                                      <AlertTriangle className="h-5 w-5 mr-2" />
-                                      Review
-                                    </>
-                                  )}
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                )}
-              </TabsContent>
-            ))}
-          </Tabs>
         </CardContent>
       </Card>
 
-      {/* Claims Review Dialog */}
-      <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="bg-gradient-to-r from-[#088C17] to-[#003C06] text-white rounded-t-2xl -mt-6 -mx-6 p-8 mb-6">
-            <div className="flex items-center space-x-6">
-              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
-                <CheckSquare className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <DialogTitle className="text-3xl font-bold text-white">Review Claim</DialogTitle>
-                <p className="text-green-100 mt-2 text-lg">
-                  {selectedClaim?.uniqueClaimId} • {selectedClaim?.beneficiaryName}
-                </p>
-              </div>
-            </div>
-          </DialogHeader>
-
-          {selectedClaim && (
-            <div className="space-y-8">
-              {/* Claim Summary */}
-              <Card className="border-2 border-gray-200 shadow-lg rounded-2xl">
-                <CardHeader className="bg-gray-50 border-b-2 border-gray-200 p-6">
-                  <CardTitle className="text-xl font-bold text-gray-900 flex items-center">
-                    <FileText className="h-6 w-6 mr-3 text-[#088C17]" />
-                    Claim Summary
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-gray-600">Claim ID</Label>
-                      <p className="text-lg font-bold text-gray-900">{selectedClaim.uniqueClaimId}</p>
+      {/* Claims Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Claims ({filteredClaims.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Claim ID</TableHead>
+                <TableHead>Beneficiary</TableHead>
+                <TableHead>Diagnosis</TableHead>
+                {viewFormat === 'expanded' && <TableHead>Treatment Procedures</TableHead>}
+                <TableHead>Procedure Cost</TableHead>
+                <TableHead>Treatment Cost</TableHead>
+                <TableHead>Medication Cost</TableHead>
+                <TableHead>Other Cost</TableHead>
+                <TableHead>Total Cost</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Format</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredClaims.map((claim) => (
+                <TableRow key={claim.id}>
+                  <TableCell className="font-mono text-sm">{claim.uniqueClaimId}</TableCell>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{claim.beneficiaryName}</div>
+                      <div className="text-sm text-muted-foreground">{claim.hospitalNumber}</div>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-gray-600">Beneficiary</Label>
-                      <p className="text-lg font-bold text-gray-900">{selectedClaim.beneficiaryName}</p>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      {claim.primaryDiagnosis?.split('; ').slice(0, 2).join(', ')}
+                      {claim.primaryDiagnosis?.split('; ').length > 2 && '...'}
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-gray-600">Facility</Label>
-                      <p className="text-lg font-bold text-gray-900">{selectedClaim.facility.name}</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-gray-600">Total Cost</Label>
-                      <p className="text-2xl font-bold text-[#088C17]">{formatCurrency(selectedClaim.totalCostOfCare)}</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-gray-600">Admission Date</Label>
-                      <p className="text-lg font-bold text-gray-900">{formatDate(selectedClaim.dateOfAdmission)}</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-gray-600">Primary Diagnosis</Label>
-                      <p className="text-lg font-bold text-gray-900">{selectedClaim.primaryDiagnosis}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Review Decision */}
-              <Card className="border-2 border-gray-200 shadow-lg rounded-2xl">
-                <CardHeader className="bg-gray-50 border-b-2 border-gray-200 p-6">
-                  <CardTitle className="text-xl font-bold text-gray-900 flex items-center">
-                    <CheckSquare className="h-6 w-6 mr-3 text-[#088C17]" />
-                    Review Decision
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6 space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                      <Label htmlFor="decision" className="text-base font-semibold text-gray-700">
-                        Decision *
-                      </Label>
-                      <Select value={reviewData.decision} onValueChange={(value) => setReviewData({...reviewData, decision: value})}>
-                        <SelectTrigger className="h-12 text-lg border-2 border-gray-300 focus:border-[#088C17] focus:ring-[#088C17] rounded-xl">
-                          <SelectValue placeholder="Select your decision" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="approved" className="text-lg">
-                            <div className="flex items-center space-x-2">
-                              <CheckCircle className="h-5 w-5 text-green-600" />
-                              <span>Approve Claim</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="rejected" className="text-lg">
-                            <div className="flex items-center space-x-2">
-                              <XCircle className="h-5 w-5 text-red-600" />
-                              <span>Reject Claim</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="needs_review" className="text-lg">
-                            <div className="flex items-center space-x-2">
-                              <AlertTriangle className="h-5 w-5 text-orange-600" />
-                              <span>Needs Review</span>
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {reviewData.decision === "approved" && (
-                      <div className="space-y-3">
-                        <Label htmlFor="approvedAmount" className="text-base font-semibold text-gray-700">
-                          Approved Amount (₦)
-                        </Label>
-                        <Input
-                          id="approvedAmount"
-                          type="number"
-                          value={reviewData.approvedAmount}
-                          onChange={(e) => setReviewData({...reviewData, approvedAmount: e.target.value})}
-                          placeholder="Enter approved amount"
-                          className="h-12 text-lg border-2 border-gray-300 focus:border-[#088C17] focus:ring-[#088C17] rounded-xl"
-                        />
-                      </div>
-                    )}
-
-                    {reviewData.decision === "rejected" && (
-                      <div className="space-y-3">
-                        <Label htmlFor="reasonForRejection" className="text-base font-semibold text-gray-700">
-                          Reason for Rejection *
-                        </Label>
-                        <Textarea
-                          id="reasonForRejection"
-                          value={reviewData.reasonForRejection}
-                          onChange={(e) => setReviewData({...reviewData, reasonForRejection: e.target.value})}
-                          placeholder="Provide detailed reason for rejection..."
-                          className="min-h-[100px] text-lg border-2 border-gray-300 focus:border-[#088C17] focus:ring-[#088C17] rounded-xl"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label htmlFor="remarks" className="text-base font-semibold text-gray-700">
-                      Additional Remarks
-                    </Label>
-                    <Textarea
-                      id="remarks"
-                      value={reviewData.remarks}
-                      onChange={(e) => setReviewData({...reviewData, remarks: e.target.value})}
-                      placeholder="Add any additional comments or notes..."
-                      className="min-h-[100px] text-lg border-2 border-gray-300 focus:border-[#088C17] focus:ring-[#088C17] rounded-xl"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end space-x-6 pt-6 border-t-2 border-gray-200">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => setIsReviewOpen(false)}
-                  className="h-12 px-8 border-2 border-gray-300 hover:border-[#088C17] hover:bg-[#088C17]/5 transition-all duration-200 rounded-xl"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  size="lg"
-                  onClick={handleReviewSubmit}
-                  disabled={!reviewData.decision || isProcessing}
-                  className="bg-[#088C17] hover:bg-[#003C06] shadow-lg h-12 px-8 font-semibold transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl"
-                >
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <CheckSquare className="h-5 w-5 mr-2" />
-                      Submit Review
-                    </>
+                  </TableCell>
+                  {viewFormat === 'expanded' && (
+                    <TableCell>
+                      {claim.treatmentProcedures && claim.treatmentProcedures.length > 0 ? (
+                        <div className="text-sm">
+                          {claim.treatmentProcedures.length} procedure(s)
+                        </div>
+                      ) : (
+                        <div className="text-sm text-muted-foreground">
+                          {claim.treatmentProcedure || 'N/A'}
+                        </div>
+                      )}
+                    </TableCell>
                   )}
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+                  <TableCell className="font-mono text-sm">
+                    {formatCurrency(claim.procedureCost || 0)}
+                  </TableCell>
+                  <TableCell className="font-mono text-sm">
+                    {formatCurrency(claim.treatmentCost || 0)}
+                  </TableCell>
+                  <TableCell className="font-mono text-sm">
+                    {formatCurrency(claim.medicationCost || 0)}
+                  </TableCell>
+                  <TableCell className="font-mono text-sm">
+                    {formatCurrency(claim.otherCost || 0)}
+                  </TableCell>
+                  <TableCell className="font-mono font-bold">
+                    {formatCurrency(claim.totalCostOfCare)}
+                  </TableCell>
+                  <TableCell>{getStatusBadge(claim.status)}</TableCell>
+                  <TableCell>
+                    <Badge variant={claim.originalFormat === 'expanded' ? 'default' : 'secondary'}>
+                      {claim.originalFormat || 'unknown'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedClaim(claim)
+                          setShowTreatmentProcedures(true)
+                          toast({
+                            title: "Treatment Procedures",
+                            description: `Opening detailed view for claim ${claim.uniqueClaimId}`,
+                          })
+                        }}
+                      >
+                        <Calculator className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Treatment Procedures Modal */}
+      <TPATreatmentProceduresModal
+        claim={selectedClaim}
+        isOpen={showTreatmentProcedures}
+        onClose={() => setShowTreatmentProcedures(false)}
+      />
     </div>
   )
 }

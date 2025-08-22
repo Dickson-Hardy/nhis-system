@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,26 +29,33 @@ export function DischargeForm() {
     phoneNumber: "",
     nin: "",
     dateOfAdmission: "",
-    dateOfTreatment: "",
     dateOfDischarge: "",
-    primaryDiagnosis: "",
+    primaryDiagnosis: [] as string[],
     secondaryDiagnosis: "",
-    treatmentProcedure: "",
+    procedureCost: "",
+    treatmentCost: "",
+    medicationCost: "",
+    otherCost: "",
     quantity: "",
     costOfInvestigation: "",
     costOfProcedure: "",
     costOfMedication: "",
     costOfOtherServices: "",
     batchId: "",
-    status: "draft",
+    status: "submitted",
   })
 
   const [batches, setBatches] = useState<Batch[]>([])
   const [loading, setLoading] = useState(false)
+  const [showBatchRequired, setShowBatchRequired] = useState(false)
 
   useEffect(() => {
     fetchAvailableBatches()
   }, [])
+
+  useEffect(() => {
+    setShowBatchRequired(batches.length === 0)
+  }, [batches])
 
   const fetchAvailableBatches = async () => {
     try {
@@ -69,25 +75,69 @@ export function DischargeForm() {
 
   const calculateTotalCost = () => {
     const investigation = Number.parseFloat(formData.costOfInvestigation) || 0
-    const procedure = Number.parseFloat(formData.costOfProcedure) || 0
-    const medication = Number.parseFloat(formData.costOfMedication) || 0
+    const procedure = Number.parseFloat(formData.procedureCost) || 0
+    const treatment = Number.parseFloat(formData.treatmentCost) || 0
+    const medication = Number.parseFloat(formData.medicationCost) || 0
+    const other = Number.parseFloat(formData.otherCost) || 0
     const otherServices = Number.parseFloat(formData.costOfOtherServices) || 0
-    return investigation + procedure + medication + otherServices
+    
+    return investigation + procedure + treatment + medication + other + otherServices
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+    setLoading(true)
+
     try {
-      setLoading(true)
-      
-      // Calculate total cost
+      if (!formData.batchId) {
+        toast({
+          title: "Batch Required",
+          description: "Please select a batch before submitting the form.",
+          variant: "destructive",
+        })
+        setLoading(false)
+        return
+      }
+
+      if (formData.primaryDiagnosis.length === 0) {
+        toast({
+          title: "Primary Diagnosis Required",
+          description: "Please select at least one primary diagnosis.",
+          variant: "destructive",
+        })
+        setLoading(false)
+        return
+      }
+
+      const finalPrimaryDiagnosis = formData.primaryDiagnosis.join("; ")
       const totalCostOfCare = calculateTotalCost()
       
+      // Submission Logic for Treatment Procedures
       const submissionData = {
-        ...formData,
+        uniqueBeneficiaryId: formData.uniqueBeneficiaryId,
+        hospitalNumber: formData.hospitalNumber,
+        beneficiaryName: formData.beneficiaryName,
+        dateOfBirth: formData.dateOfBirth,
+        age: formData.age,
+        address: formData.address,
+        phoneNumber: formData.phoneNumber,
+        nin: formData.nin,
+        dateOfAdmission: formData.dateOfAdmission,
+        dateOfDischarge: formData.dateOfDischarge,
+        primaryDiagnosis: finalPrimaryDiagnosis,
+        secondaryDiagnosis: formData.secondaryDiagnosis,
+        procedureCost: formData.procedureCost,
+        treatmentCost: formData.treatmentCost,
+        medicationCost: formData.medicationCost,
+        otherCost: formData.otherCost,
+        quantity: formData.quantity,
+        costOfInvestigation: formData.costOfInvestigation,
+        costOfProcedure: formData.costOfProcedure,
+        costOfMedication: formData.costOfMedication,
+        costOfOtherServices: formData.costOfOtherServices,
         totalCostOfCare: totalCostOfCare.toString(),
-        batchId: formData.batchId ? parseInt(formData.batchId) : undefined,
+        batchId: parseInt(formData.batchId),
+        status: formData.status
       }
       
       const response = await fetch("/api/facility/claims", {
@@ -106,7 +156,7 @@ export function DischargeForm() {
           description: "Discharge form saved successfully",
         })
         
-        // Reset form
+        // Form Reset
         setFormData({
           uniqueBeneficiaryId: "",
           hospitalNumber: "",
@@ -117,18 +167,20 @@ export function DischargeForm() {
           phoneNumber: "",
           nin: "",
           dateOfAdmission: "",
-          dateOfTreatment: "",
           dateOfDischarge: "",
-          primaryDiagnosis: "",
+          primaryDiagnosis: [],
           secondaryDiagnosis: "",
-          treatmentProcedure: "",
+          procedureCost: "",
+          treatmentCost: "",
+          medicationCost: "",
+          otherCost: "",
           quantity: "",
           costOfInvestigation: "",
           costOfProcedure: "",
           costOfMedication: "",
           costOfOtherServices: "",
           batchId: "",
-          status: "draft",
+          status: "submitted"
         })
       } else {
         toast({
@@ -156,14 +208,42 @@ export function DischargeForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Patient Information Section */}
+          {showBatchRequired && (
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">!</span>
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-blue-900 text-lg">Batch Required First</h4>
+                  <p className="text-blue-700">
+                    You must create a batch before adding claims. Claims can only be created within open batches.
+                  </p>
+                  <div className="mt-3">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                      onClick={() => {
+                        const batchTab = document.querySelector('[data-value="batches"]') as HTMLElement;
+                        if (batchTab) {
+                          batchTab.click();
+                        }
+                      }}
+                    >
+                      Create Batch
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-card-foreground border-b border-border pb-2">
-              Patient Information
-            </h3>
+            <h3 className="text-lg font-semibold text-card-foreground border-b border-border pb-2">Patient Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="uniqueBeneficiaryId">Unique Beneficiary ID</Label>
+                <Label htmlFor="uniqueBeneficiaryId">Unique Beneficiary ID *</Label>
                 <Input
                   id="uniqueBeneficiaryId"
                   value={formData.uniqueBeneficiaryId}
@@ -173,7 +253,7 @@ export function DischargeForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="hospitalNumber">Hospital Number</Label>
+                <Label htmlFor="hospitalNumber">Hospital Number *</Label>
                 <Input
                   id="hospitalNumber"
                   value={formData.hospitalNumber}
@@ -183,7 +263,7 @@ export function DischargeForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="beneficiaryName">Beneficiary Name</Label>
+                <Label htmlFor="beneficiaryName">Beneficiary Name *</Label>
                 <Input
                   id="beneficiaryName"
                   value={formData.beneficiaryName}
@@ -193,7 +273,7 @@ export function DischargeForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                <Label htmlFor="dateOfBirth">Date of Birth *</Label>
                 <Input
                   id="dateOfBirth"
                   type="date"
@@ -211,7 +291,6 @@ export function DischargeForm() {
                   value={formData.age}
                   onChange={(e) => handleInputChange("age", e.target.value)}
                   className="bg-input border-border"
-                  required
                 />
               </div>
               <div className="space-y-2">
@@ -221,7 +300,6 @@ export function DischargeForm() {
                   value={formData.phoneNumber}
                   onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
                   className="bg-input border-border"
-                  required
                 />
               </div>
               <div className="space-y-2">
@@ -233,27 +311,24 @@ export function DischargeForm() {
                   className="bg-input border-border"
                 />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="address">Address</Label>
-              <Textarea
-                id="address"
-                value={formData.address}
-                onChange={(e) => handleInputChange("address", e.target.value)}
-                className="bg-input border-border"
-                rows={2}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
+                <Textarea
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) => handleInputChange("address", e.target.value)}
+                  className="bg-input border-border"
+                  rows={2}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Treatment Information Section */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-card-foreground border-b border-border pb-2">
-              Treatment Information
-            </h3>
+            <h3 className="text-lg font-semibold text-card-foreground border-b border-border pb-2">Admission & Treatment Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="dateOfAdmission">Date of Admission</Label>
+                <Label htmlFor="dateOfAdmission">Date of Admission *</Label>
                 <Input
                   id="dateOfAdmission"
                   type="date"
@@ -264,18 +339,7 @@ export function DischargeForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="dateOfTreatment">Date of Treatment</Label>
-                <Input
-                  id="dateOfTreatment"
-                  type="date"
-                  value={formData.dateOfTreatment}
-                  onChange={(e) => handleInputChange("dateOfTreatment", e.target.value)}
-                  className="bg-input border-border"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="dateOfDischarge">Date of Discharge</Label>
+                <Label htmlFor="dateOfDischarge">Date of Discharge *</Label>
                 <Input
                   id="dateOfDischarge"
                   type="date"
@@ -286,17 +350,60 @@ export function DischargeForm() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-card-foreground border-b border-border pb-2">Diagnosis Information</h3>
+            <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="primaryDiagnosis">Primary Diagnosis</Label>
-                <Textarea
-                  id="primaryDiagnosis"
-                  value={formData.primaryDiagnosis}
-                  onChange={(e) => handleInputChange("primaryDiagnosis", e.target.value)}
-                  className="bg-input border-border"
-                  rows={2}
-                  required
-                />
+                <Label>Primary Diagnosis *</Label>
+                <div className="space-y-3 max-h-48 overflow-y-auto border rounded-lg p-3 bg-input">
+                  {[
+                    { value: "P/PROM O42", label: "P/PROM O42" },
+                    { value: "Preeclampsia O14.9", label: "Preeclampsia O14.9" },
+                    { value: "Eclampsia O15", label: "Eclampsia O15" },
+                    { value: "Antepartum haemorrhage O46.9", label: "Antepartum haemorrhage O46.9" },
+                    { value: "Postpartum haemorrhage O72.0-O72.2", label: "Postpartum haemorrhage O72.0-O72.2" },
+                    { value: "Ectopic pregnancy O00.1-O00.9", label: "Ectopic pregnancy O00.1-O00.9" },
+                    { value: "Puerperal sepsis O85", label: "Puerperal sepsis O85" },
+                    { value: "Post abortion care O03.3-O03.4 O03.8-O03.9", label: "Post abortion care O03.3-O03.4 O03.8-O03.9" },
+                    { value: "Obstructed labour O33.3 O65.3", label: "Obstructed labour O33.3 O65.3" }
+                  ].map((diagnosis) => (
+                    <div key={diagnosis.value} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={diagnosis.value}
+                        value={diagnosis.value}
+                        checked={formData.primaryDiagnosis.includes(diagnosis.value)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData(prev => ({
+                              ...prev,
+                              primaryDiagnosis: [...prev.primaryDiagnosis, diagnosis.value]
+                            }))
+                          } else {
+                            setFormData(prev => ({
+                              ...prev,
+                              primaryDiagnosis: prev.primaryDiagnosis.filter(d => d !== diagnosis.value)
+                            }))
+                          }
+                        }}
+                        className="h-4 w-4 text-primary border-border rounded focus:ring-primary"
+                      />
+                      <Label htmlFor={diagnosis.value} className="text-sm font-normal cursor-pointer">
+                        {diagnosis.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+                {formData.primaryDiagnosis.length === 0 && (
+                  <p className="text-sm text-red-600">Please select at least one primary diagnosis.</p>
+                )}
+                {formData.primaryDiagnosis.length > 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    Selected: {formData.primaryDiagnosis.join(", ")}
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="secondaryDiagnosis">Secondary Diagnosis</Label>
@@ -306,35 +413,67 @@ export function DischargeForm() {
                   onChange={(e) => handleInputChange("secondaryDiagnosis", e.target.value)}
                   className="bg-input border-border"
                   rows={2}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="treatmentProcedure">Treatment/Procedure</Label>
-                <Textarea
-                  id="treatmentProcedure"
-                  value={formData.treatmentProcedure}
-                  onChange={(e) => handleInputChange("treatmentProcedure", e.target.value)}
-                  className="bg-input border-border"
-                  rows={2}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="quantity">Quantity</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  value={formData.quantity}
-                  onChange={(e) => handleInputChange("quantity", e.target.value)}
-                  className="bg-input border-border"
+                  placeholder="Additional diagnosis details, complications, or other conditions"
                 />
               </div>
             </div>
           </div>
 
-          {/* Cost Information Section */}
+          {/* UI for Treatment Procedures (replaces old textarea) */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-card-foreground border-b border-border pb-2">Treatment Cost Breakdown</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="procedureCost">Procedure Cost (₦)</Label>
+                <Input 
+                  id="procedureCost" 
+                  type="number" 
+                  value={formData.procedureCost} 
+                  onChange={(e) => handleInputChange("procedureCost", e.target.value)} 
+                  className="bg-input border-border" 
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="treatmentCost">Treatment Cost (₦)</Label>
+                <Input 
+                  id="treatmentCost" 
+                  type="number" 
+                  value={formData.treatmentCost} 
+                  onChange={(e) => handleInputChange("treatmentCost", e.target.value)} 
+                  className="bg-input border-border" 
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="medicationCost">Medication Cost (₦)</Label>
+                <Input 
+                  id="medicationCost" 
+                  type="number" 
+                  value={formData.medicationCost} 
+                  onChange={(e) => handleInputChange("medicationCost", e.target.value)} 
+                  className="bg-input border-border" 
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="otherCost">Other Cost (₦)</Label>
+                <Input 
+                  id="otherCost" 
+                  type="number" 
+                  value={formData.otherCost} 
+                  onChange={(e) => handleInputChange("otherCost", e.target.value)} 
+                  className="bg-input border-border" 
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="quantity">Quantity</Label>
+              <Input id="quantity" type="number" value={formData.quantity} onChange={(e) => handleInputChange("quantity", e.target.value)} className="bg-input border-border" />
+            </div>
+          </div>
+
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-card-foreground border-b border-border pb-2">Cost Breakdown</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -391,18 +530,18 @@ export function DischargeForm() {
             </div>
           </div>
 
-          {/* Batch Assignment Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-card-foreground border-b border-border pb-2">Batch Assignment</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="batchId">Assign to Batch (Optional)</Label>
+                <Label htmlFor="batchId" className="text-red-600 font-semibold">
+                  Assign to Batch * (Required)
+                </Label>
                 <Select value={formData.batchId} onValueChange={(value) => handleInputChange("batchId", value)}>
-                  <SelectTrigger className="bg-input border-border">
-                    <SelectValue placeholder="Select a batch or leave unassigned" />
+                  <SelectTrigger className="bg-input border-border border-red-300 focus:border-red-500">
+                    <SelectValue placeholder="Select a batch (required)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No batch (will be assigned later)</SelectItem>
                     {batches.map((batch) => (
                       <SelectItem key={batch.id} value={batch.id.toString()}>
                         {batch.batchNumber} (Week: {new Date(batch.weekStartDate).toLocaleDateString()} - {new Date(batch.weekEndDate).toLocaleDateString()})
@@ -410,6 +549,11 @@ export function DischargeForm() {
                     ))}
                   </SelectContent>
                 </Select>
+                {batches.length === 0 && (
+                  <p className="text-sm text-red-600">
+                    No open batches available. Please create a batch first.
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
@@ -424,13 +568,11 @@ export function DischargeForm() {
                 </Select>
               </div>
             </div>
-            {formData.batchId && (
-              <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  <strong>Note:</strong> This claim will be assigned to the selected batch and included in the batch submission to TPA.
-                </p>
-              </div>
-            )}
+            <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Note:</strong> This claim will be assigned to the selected batch and included in the batch submission to TPA.
+              </p>
+            </div>
           </div>
 
           <div className="flex gap-4 pt-6">

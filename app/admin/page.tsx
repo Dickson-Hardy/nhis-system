@@ -13,6 +13,7 @@ import { ExecutiveSummaryWidget } from "@/components/admin/executive-summary-wid
 import { QuickActionsWidget } from "@/components/admin/quick-actions-widget"
 import { TPAFinancialBreakdownWidget } from "@/components/admin/tpa-financial-breakdown-widget"
 import { DateFilterWidget } from "@/components/admin/date-filter-widget"
+import { RejectedClaimsAnalysisWidget } from "@/components/admin/rejected-claims-analysis-widget"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -345,6 +346,9 @@ export default function AdminDashboard() {
             <TabsTrigger value="tpa-breakdown" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-emerald-700 rounded-xl transition-all duration-200">
               TPA Breakdown
             </TabsTrigger>
+            <TabsTrigger value="rejected-claims" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-emerald-700 rounded-xl transition-all duration-200">
+              Rejected Claims
+            </TabsTrigger>
             <TabsTrigger value="tpa-performance" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-emerald-700 rounded-xl transition-all duration-200">
               TPA Performance
             </TabsTrigger>
@@ -494,6 +498,16 @@ export default function AdminDashboard() {
           <TPAFinancialBreakdownWidget 
             tpaFinancialBreakdown={tpaFinancialBreakdown}
             impactMetrics={impactMetrics}
+          />
+        </TabsContent>
+
+        <TabsContent value="rejected-claims">
+          <RejectedClaimsAnalysisWidget 
+            rejectedClaims={[]} // TODO: Fetch from API
+            onExportData={() => {
+              // TODO: Implement export functionality
+              console.log('Export rejected claims data')
+            }}
           />
         </TabsContent>
 

@@ -76,6 +76,11 @@ export const claims = pgTable("claims", {
   primaryDiagnosis: text("primary_diagnosis"),
   secondaryDiagnosis: text("secondary_diagnosis"),
   treatmentProcedure: text("treatment_procedure"),
+  treatmentProcedures: text("treatment_procedures"), // JSON string containing detailed treatment procedures breakdown
+  procedureCost: decimal("procedure_cost", { precision: 10, scale: 2 }),
+  treatmentCost: decimal("treatment_cost", { precision: 10, scale: 2 }),
+  medicationCost: decimal("medication_cost", { precision: 10, scale: 2 }),
+  otherCost: decimal("other_cost", { precision: 10, scale: 2 }),
   quantity: integer("quantity"),
   cost: decimal("cost", { precision: 12, scale: 2 }),
 

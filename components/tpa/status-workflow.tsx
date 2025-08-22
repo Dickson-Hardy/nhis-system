@@ -27,24 +27,24 @@ export function StatusWorkflow({ currentStatus, className = "" }: StatusWorkflow
     },
     {
       status: "verified",
-      label: "Verified",
+      label: "Verified & Paid",
       icon: CheckCircle,
       color: "bg-green-100 text-green-800 border-green-200",
-      description: "TPA approved claim"
+      description: "TPA approved & paid facility"
     },
     {
       status: "verified_awaiting_payment",
-      label: "Awaiting Payment",
+      label: "Awaiting Reimbursement",
       icon: DollarSign,
       color: "bg-purple-100 text-purple-800 border-purple-200",
-      description: "NHIS processing payment"
+      description: "NHIS processing TPA reimbursement"
     },
     {
       status: "verified_paid",
-      label: "Paid",
+      label: "Reimbursed",
       icon: CheckCircle,
       color: "bg-emerald-100 text-emerald-800 border-emerald-200",
-      description: "Payment completed"
+      description: "TPA reimbursed by NHIS"
     }
   ]
 
@@ -53,7 +53,7 @@ export function StatusWorkflow({ currentStatus, className = "" }: StatusWorkflow
     label: "Rejected",
     icon: XCircle,
     color: "bg-red-100 text-red-800 border-red-200",
-    description: "Claim rejected by TPA"
+    description: "Claim rejected by TPA - no payment made"
   }
 
   const getCurrentStepIndex = () => {

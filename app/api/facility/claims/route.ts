@@ -27,6 +27,8 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(url.searchParams.get("limit") || "50")
     const offset = parseInt(url.searchParams.get("offset") || "0")
 
+    console.log(`Fetching claims for facility ${user.facilityId}, batchStatus: ${batchStatus}`)
+
     // Build query conditions
     const conditions = [eq(claims.facilityId, user.facilityId)]
 
@@ -40,48 +42,82 @@ export async function GET(request: NextRequest) {
       conditions.push(isNotNull(claims.batchId))
     }
 
+    console.log(`Query conditions: ${conditions.length} conditions`)
+
     // Get claims with batch information
     const facilityClaims = await db
       .select({
         id: claims.id,
         uniqueClaimId: claims.uniqueClaimId,
+        uniqueBeneficiaryId: claims.uniqueBeneficiaryId,
         beneficiaryName: claims.beneficiaryName,
         hospitalNumber: claims.hospitalNumber,
-        uniqueBeneficiaryId: claims.uniqueBeneficiaryId,
         dateOfAdmission: claims.dateOfAdmission,
-        dateOfTreatment: claims.dateOfTreatment,
         dateOfDischarge: claims.dateOfDischarge,
         primaryDiagnosis: claims.primaryDiagnosis,
+        secondaryDiagnosis: claims.secondaryDiagnosis,
         treatmentProcedure: claims.treatmentProcedure,
+        treatmentProcedures: claims.treatmentProcedures,
+        procedureCost: claims.procedureCost,
+        treatmentCost: claims.treatmentCost,
+        medicationCost: claims.medicationCost,
+        otherCost: claims.otherCost,
         totalCostOfCare: claims.totalCostOfCare,
+        quantity: claims.quantity,
+        costOfInvestigation: claims.costOfInvestigation,
+        costOfProcedure: claims.costOfProcedure,
+        costOfMedication: claims.costOfMedication,
+        costOfOtherServices: claims.costOfOtherServices,
         status: claims.status,
         batchId: claims.batchId,
         createdAt: claims.createdAt,
         updatedAt: claims.updatedAt,
-        batch: {
+        batchInfo: {
           id: batches.id,
           batchNumber: batches.batchNumber,
           status: batches.status,
+          createdAt: batches.createdAt
         }
       })
       .from(claims)
       .leftJoin(batches, eq(claims.batchId, batches.id))
-      .where(and(...conditions))
+      .where(conditions.length > 1 ? and(...conditions) : conditions[0])
       .orderBy(desc(claims.createdAt))
       .limit(limit)
       .offset(offset)
 
+    console.log(`Found ${facilityClaims?.length || 0} claims`)
+
+    // Process the claims to ensure proper structure
+    const validClaims = Array.isArray(facilityClaims) ? facilityClaims.map(claim => ({
+      ...claim,
+      batch: claim.batchInfo?.id ? claim.batchInfo : null,
+      treatmentProcedures: claim.treatmentProcedures ? JSON.parse(claim.treatmentProcedures) : null
+    })) : []
+
+    // Remove the temporary batchInfo field
+    validClaims.forEach(claim => {
+      delete (claim as any).batchInfo
+    })
+
     return NextResponse.json({
-      claims: facilityClaims,
+      claims: validClaims,
       pagination: {
         limit,
         offset,
-        hasMore: facilityClaims.length === limit,
+        hasMore: validClaims.length === limit,
       },
     })
   } catch (error) {
     console.error("Error fetching facility claims:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    // Provide more detailed error information
+    const errorMessage = error instanceof Error ? error.message : "Unknown error"
+    const errorStack = error instanceof Error ? error.stack : "No stack trace"
+    console.error("Error details:", { message: errorMessage, stack: errorStack })
+    return NextResponse.json({ 
+      error: "Internal server error",
+      details: process.env.NODE_ENV === "development" ? errorMessage : undefined
+    }, { status: 500 })
   }
 }
 
@@ -103,8 +139,14 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    
+    // Validate that body is an object
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
+    }
+
+    // POST method update
     const {
-      // Patient Information
       uniqueBeneficiaryId,
       hospitalNumber,
       beneficiaryName,
@@ -113,28 +155,36 @@ export async function POST(request: NextRequest) {
       address,
       phoneNumber,
       nin,
-      
-      // Treatment Information
       dateOfAdmission,
-      dateOfTreatment,
       dateOfDischarge,
       primaryDiagnosis,
       secondaryDiagnosis,
-      treatmentProcedure,
+      procedureCost,
+      treatmentCost,
+      medicationCost,
+      otherCost,
       quantity,
-      
-      // Cost Information
       costOfInvestigation,
       costOfProcedure,
       costOfMedication,
       costOfOtherServices,
-      
-      // Batch Assignment (optional)
+      totalCostOfCare,
       batchId,
-      
-      // Status
-      status = "draft", // "draft", "completed"
+      status
     } = body
+
+    // Calculate total cost to include all cost categories
+    const investigation = parseFloat(costOfInvestigation) || 0
+    const procedure = parseFloat(costOfProcedure) || 0
+    const medication = parseFloat(costOfMedication) || 0
+    const otherServices = parseFloat(costOfOtherServices) || 0
+    const procedureCostValue = parseFloat(procedureCost) || 0
+    const treatmentCostValue = parseFloat(treatmentCost) || 0
+    const medicationCostValue = parseFloat(medicationCost) || 0
+    const otherCostValue = parseFloat(otherCost) || 0
+    
+    const calculatedTotalCost = investigation + procedure + medication + otherServices + 
+                              procedureCostValue + treatmentCostValue + medicationCostValue + otherCostValue
 
     // Validate required fields
     const requiredFields = {
@@ -151,7 +201,7 @@ export async function POST(request: NextRequest) {
       treatmentProcedure: treatmentProcedure || null,
     }
 
-    const missingFields = Object.entries(requiredFields)
+    const missingFields = Object.entries(requiredFields || {})
       .filter(([_, value]) => !value)
       .map(([key, _]) => key)
 
@@ -160,13 +210,6 @@ export async function POST(request: NextRequest) {
         error: `Missing required fields: ${missingFields.join(", ")}` 
       }, { status: 400 })
     }
-
-    // Calculate total cost
-    const investigation = parseFloat(costOfInvestigation) || 0
-    const procedure = parseFloat(costOfProcedure) || 0
-    const medication = parseFloat(costOfMedication) || 0
-    const otherServices = parseFloat(costOfOtherServices) || 0
-    const totalCostOfCare = investigation + procedure + medication + otherServices
 
     // Get facility information
     const facility = await db
@@ -205,45 +248,36 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create new claim
+    // Insert new claim
     const newClaim = await db
       .insert(claims)
       .values({
-        uniqueClaimId,
-        facilityId: user.facilityId,
-        tpaId: facility[0].tpaId!,
-        batchId: batchId || null,
-        
-        // Patient Information
         uniqueBeneficiaryId,
         hospitalNumber,
         beneficiaryName,
         dateOfBirth,
-        age: parseInt(age),
+        age,
         address,
         phoneNumber,
         nin,
-        
-        // Treatment Information
         dateOfAdmission,
-        dateOfTreatment,
         dateOfDischarge,
         primaryDiagnosis,
         secondaryDiagnosis,
-        treatmentProcedure,
+        procedureCost: procedureCostValue,
+        treatmentCost: treatmentCostValue,
+        medicationCost: medicationCostValue,
+        otherCost: otherCostValue,
         quantity: quantity ? parseInt(quantity) : null,
-        
-        // Cost Information
-        costOfInvestigation: investigation.toString(),
-        costOfProcedure: procedure.toString(),
-        costOfMedication: medication.toString(),
-        costOfOtherServices: otherServices.toString(),
-        totalCostOfCare: totalCostOfCare.toString(),
-        
-        status,
-        createdBy: user.id,
+        costOfInvestigation: investigation,
+        costOfProcedure: procedure,
+        costOfMedication: medication,
+        costOfOtherServices: otherServices,
+        totalCostOfCare: calculatedTotalCost,
+        batchId: parseInt(batchId),
+        status: status || 'submitted',
         createdAt: new Date(),
-        updatedAt: new Date(),
+        updatedAt: new Date()
       })
       .returning()
 
@@ -264,27 +298,38 @@ export async function POST(request: NextRequest) {
 
 // Helper function to update batch statistics
 async function updateBatchStatistics(batchId: number) {
-  const batchClaims = await db
-    .select({
-      totalCostOfCare: claims.totalCostOfCare,
-      status: claims.status,
-    })
-    .from(claims)
-    .where(eq(claims.batchId, batchId))
+  try {
+    const batchClaims = await db
+      .select({
+        totalCostOfCare: claims.totalCostOfCare,
+        status: claims.status,
+      })
+      .from(claims)
+      .where(eq(claims.batchId, batchId))
 
-  const totalClaims = batchClaims.length
-  const completedClaims = batchClaims.filter(claim => claim.status === "completed").length
-  const totalAmount = batchClaims.reduce((sum, claim) => {
-    return sum + parseFloat(claim.totalCostOfCare || "0")
-  }, 0)
+    if (!batchClaims || !Array.isArray(batchClaims)) {
+      console.error(`No valid claims found for batch ${batchId}`)
+      return
+    }
 
-  await db
-    .update(batches)
-    .set({
-      totalClaims,
-      completedClaims,
-      totalAmount: totalAmount.toString(),
-      updatedAt: new Date(),
-    })
-    .where(eq(batches.id, batchId))
+    const totalClaims = batchClaims.length
+    const completedClaims = batchClaims.filter(claim => claim?.status === "completed").length
+    const totalAmount = batchClaims.reduce((sum, claim) => {
+      if (!claim || !claim.totalCostOfCare) return sum
+      return sum + parseFloat(claim.totalCostOfCare || "0")
+    }, 0)
+
+    await db
+      .update(batches)
+      .set({
+        totalClaims,
+        completedClaims,
+        totalAmount: totalAmount.toString(),
+        updatedAt: new Date(),
+      })
+      .where(eq(batches.id, batchId))
+  } catch (error) {
+    console.error(`Error updating batch statistics for batch ${batchId}:`, error)
+    // Don't throw the error to prevent the main operation from failing
+  }
 }

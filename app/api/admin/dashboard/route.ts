@@ -148,7 +148,7 @@ export async function GET(request: NextRequest) {
         status: claims.status,
         decision: claims.decision,
         totalAmount: sum(claims.totalCostOfCare),
-        approvedAmount: sum(claims.approvedCostOfCare),
+        paidAmount: sum(claims.approvedCostOfCare), // Amount TPA paid to facility
         claimCount: count()
       })
       .from(claims)
@@ -199,18 +199,18 @@ export async function GET(request: NextRequest) {
           tpaName,
           tpaId: item.tpaId,
           totalAmount: 0,
-          approvedAmount: 0,
+          paidAmount: 0, // Amount TPA paid to facilities
           totalClaims: 0,
           breakdown: {}
         }
       }
       
       acc[tpaName].totalAmount += Number(item.totalAmount || 0)
-      acc[tpaName].approvedAmount += Number(item.approvedAmount || 0)
+      acc[tpaName].paidAmount += Number(item.paidAmount || 0) // Amount TPA paid to facilities
       acc[tpaName].totalClaims += item.claimCount
       acc[tpaName].breakdown[status] = {
         amount: Number(item.totalAmount || 0),
-        approvedAmount: Number(item.approvedAmount || 0),
+        paidAmount: Number(item.paidAmount || 0), // Amount TPA paid
         count: item.claimCount
       }
       
