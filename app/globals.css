@@ -3,101 +3,126 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Official NHIS Brand Colors from Brand Guidelines */
+
 :root {
-  /* Official NHIA Brand Colors from Brand Guidelines */
-  --background: oklch(1 0 0); /* #FFFFFF - Pure White */
-  --foreground: oklch(0.205 0 0); /* #1f2937 - Main text color */
-  --card: oklch(0.97 0 0); /* #f1f5f9 - Card background */
-  --card-foreground: oklch(0.205 0 0); /* #1f2937 - Card text color */
-  --popover: oklch(1 0 0); /* #FFFFFF - Popover background */
-  --popover-foreground: oklch(0.205 0 0); /* #1f2937 - Popover text color */
+  /* Primary Colors - NHIS Green #088C17 */
+  --primary: oklch(0.35 0.12 140); /* #088C17 - NHIS Green primary */
+  --primary-foreground: oklch(0.98 0.01 140); /* #fafafa - White text on primary */
   
-  /* Primary Colors - NHIA Green #088C17 */
-  --primary: oklch(0.35 0.12 140); /* #088C17 - NHIA Green primary */
-  --primary-foreground: oklch(1 0 0); /* #FFFFFF - Text on primary buttons */
+  /* Secondary Colors */
+  --secondary: oklch(0.96 0.01 140); /* #f4f4f5 - Light gray secondary */
+  --secondary-foreground: oklch(0.35 0.12 140); /* #088C17 - NHIS Green text on secondary */
   
-  /* Secondary Colors - Deep Forest Green #003C06 */
-  --secondary: oklch(0.15 0.08 140); /* #003C06 - Deep Forest Green secondary */
-  --secondary-foreground: oklch(1 0 0); /* #FFFFFF - Text on secondary buttons */
+  /* NHIS Blue #104D7F */
+  --accent: oklch(0.35 0.12 240); /* #104D7F - NHIS Blue accent */
+  --accent-foreground: oklch(0.98 0.01 240); /* #fafafa - White text on accent */
   
-  /* NHIA Blue #104D7F */
-  --accent: oklch(0.35 0.12 240); /* #104D7F - NHIA Blue accent */
-  --accent-foreground: oklch(1 0 0); /* #FFFFFF - Text on accent backgrounds */
+  /* Background Colors */
+  --background: oklch(0.98 0.01 140); /* #fafafa - Light background */
+  --foreground: oklch(0.15 0.01 140); /* #262626 - Dark text */
   
-  /* Neutral Grey #808080 */
-  --muted: oklch(0.556 0 0); /* #808080 - Neutral Grey muted background */
-  --muted-foreground: oklch(0.45 0 0); /* #6b7280 - Dark grey text on muted backgrounds */
+  /* Card Colors */
+  --card: oklch(1 0 0); /* #ffffff - White card background */
+  --card-foreground: oklch(0.15 0.01 140); /* #262626 - Dark text on card */
   
-  /* Status Colors */
-  --destructive: oklch(0.577 0.245 27.325); /* #ef4444 - Error messages */
-  --destructive-foreground: oklch(1 0 0); /* #FFFFFF - Text on destructive buttons */
+  /* Popover Colors */
+  --popover: oklch(1 0 0); /* #ffffff - White popover */
+  --popover-foreground: oklch(0.15 0.01 140); /* #262626 - Dark text on popover */
   
-  /* Interface Colors */
-  --border: oklch(0.85 0 0); /* #d1d5db - Border color */
-  --input: oklch(0.97 0 0); /* #f1f5f9 - Input field background */
-  --ring: oklch(0.35 0.12 140 / 0.5); /* NHIA Green focus ring */
+  /* Border Colors */
+  --border: oklch(0.9 0.01 140); /* #e4e4e7 - Light border */
+  --input: oklch(0.9 0.01 140); /* #e4e4e7 - Input border */
   
-  /* Chart Colors using NHIA Brand Palette */
-  --chart-1: oklch(0.35 0.12 140); /* #088C17 - NHIA Green chart color */
-  --chart-2: oklch(0.15 0.08 140); /* #003C06 - Deep Forest Green chart color */
-  --chart-3: oklch(0.556 0 0); /* #808080 - Neutral Grey chart color */
-  --chart-4: oklch(0.35 0.12 240); /* #104D7F - NHIA Blue chart color */
-  --chart-5: oklch(0.577 0.245 27.325); /* #ef4444 - Error chart color */
+  /* Focus Ring */
+  --ring: oklch(0.35 0.12 140 / 0.5); /* NHIS Green focus ring */
   
-  /* Layout */
-  --radius: 0.375rem; /* Rounded corners */
+  /* Chart Colors using NHIS Brand Palette */
+  --chart-1: oklch(0.35 0.12 140); /* #088C17 - NHIS Green chart color */
+  --chart-2: oklch(0.35 0.12 240); /* #104D7F - NHIS Blue chart color */
+  --chart-3: oklch(0.35 0.12 60); /* #f59e0b - Amber chart color */
+  --chart-4: oklch(0.35 0.12 240); /* #104D7F - NHIS Blue chart color */
+  --chart-5: oklch(0.35 0.12 25); /* #ef4444 - Red chart color */
   
-  /* Sidebar Colors using NHIA Brand */
-  --sidebar: oklch(0.35 0.12 140); /* #088C17 - NHIA Green sidebar background */
-  --sidebar-foreground: oklch(1 0 0); /* #FFFFFF - Sidebar text color */
-  --sidebar-primary: oklch(0.15 0.08 140); /* #003C06 - Deep Forest Green sidebar primary */
-  --sidebar-primary-foreground: oklch(1 0 0); /* #FFFFFF - Text on primary sidebar elements */
-  --sidebar-accent: oklch(0.35 0.12 240); /* #104D7F - NHIA Blue sidebar accent */
-  --sidebar-accent-foreground: oklch(1 0 0); /* #FFFFFF - Text on sidebar accent elements */
-  --sidebar-border: oklch(0.15 0.08 140); /* #003C06 - Deep Forest Green sidebar border */
-  --sidebar-ring: oklch(0.35 0.12 140 / 0.5); /* NHIA Green focus ring for sidebar */
+  /* Sidebar Colors using NHIS Brand */
+  --sidebar: oklch(0.35 0.12 140); /* #088C17 - NHIS Green sidebar background */
+  --sidebar-foreground: oklch(0.98 0.01 140); /* #fafafa - White text on sidebar */
+  --sidebar-primary: oklch(0.35 0.12 240); /* #104D7F - NHIS Blue sidebar primary */
+  --sidebar-accent: oklch(0.35 0.12 240); /* #104D7F - NHIS Blue sidebar accent */
+  --sidebar-border: oklch(0.35 0.12 140 / 0.2); /* NHIS Green sidebar border */
+  --sidebar-ring: oklch(0.35 0.12 140 / 0.5); /* NHIS Green focus ring for sidebar */
+  
+  /* Destructive Colors */
+  --destructive: oklch(0.35 0.12 25); /* #ef4444 - Red destructive */
+  --destructive-foreground: oklch(0.98 0.01 25); /* #fafafa - White text on destructive */
+  
+  /* Success Colors */
+  --success: oklch(0.35 0.12 140); /* #088C17 - NHIS Green success */
+  --success-foreground: oklch(0.98 0.01 140); /* #fafafa - White text on success */
+  
+  /* Warning Colors */
+  --warning: oklch(0.35 0.12 60); /* #f59e0b - Amber warning */
+  --warning-foreground: oklch(0.15 0.01 60); /* #262626 - Dark text on warning */
+  
+  /* Muted Colors */
+  --muted: oklch(0.96 0.01 140); /* #f4f4f5 - Light muted */
+  --muted-foreground: oklch(0.45 0.01 140); /* #71717a - Dark muted text */
+  
+  /* Radius */
+  --radius: 0.5rem;
 }
 
+/* Dark mode maintains NHIS brand colors but with better contrast */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
+  --background: oklch(0.15 0.01 140); /* #262626 - Dark background */
+  --foreground: oklch(0.98 0.01 140); /* #fafafa - Light text */
   
-  /* Dark mode maintains NHIA brand colors but with better contrast */
-  --primary: oklch(0.45 0.15 140); /* Lighter NHIA Green for dark mode */
-  --primary-foreground: oklch(0.145 0 0);
-  --secondary: oklch(0.25 0.1 140); /* Lighter Deep Forest Green for dark mode */
-  --secondary-foreground: oklch(0.985 0 0);
-  --accent: oklch(0.45 0.15 240); /* Lighter NHIA Blue accent for dark mode */
-  --accent-foreground: oklch(0.145 0 0);
+  --card: oklch(0.2 0.01 140); /* #3f3f46 - Dark card */
+  --card-foreground: oklch(0.98 0.01 140); /* #fafafa - Light text on card */
   
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
+  --popover: oklch(0.2 0.01 140); /* #3f3f46 - Dark popover */
+  --popover-foreground: oklch(0.98 0.01 140); /* #fafafa - Light text on popover */
   
-  /* Dark mode charts maintain NHIA brand identity */
-  --chart-1: oklch(0.45 0.15 140); /* Lighter NHIA Green for dark mode charts */
-  --chart-2: oklch(0.25 0.1 140); /* Lighter Deep Forest Green for dark mode charts */
-  --chart-3: oklch(0.556 0 0); /* Neutral Grey remains same */
-  --chart-4: oklch(0.45 0.15 240); /* Lighter NHIA Blue for dark mode charts */
-  --chart-5: oklch(0.627 0.265 303.9);
+  --primary: oklch(0.45 0.15 140); /* Lighter NHIS Green for dark mode */
+  --primary-foreground: oklch(0.15 0.01 140); /* #262626 - Dark text on primary */
   
-  /* Dark sidebar maintains NHIA brand */
-  --sidebar: oklch(0.25 0.1 140); /* Darker Deep Forest Green for dark sidebar */
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.35 0.12 140); /* NHIA Green for dark sidebar primary */
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.35 0.12 240); /* NHIA Blue for dark sidebar accent */
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.15 0.08 140); /* Deep Forest Green border */
-  --sidebar-ring: oklch(0.35 0.12 140 / 0.5);
+  --secondary: oklch(0.2 0.01 140); /* #3f3f46 - Dark secondary */
+  --secondary-foreground: oklch(0.98 0.01 140); /* #fafafa - Light text on secondary */
+  
+  --accent: oklch(0.45 0.15 240); /* Lighter NHIS Blue accent for dark mode */
+  --accent-foreground: oklch(0.15 0.01 240); /* #262626 - Dark text on accent */
+  
+  --muted: oklch(0.2 0.01 140); /* #3f3f46 - Dark muted */
+  --muted-foreground: oklch(0.65 0.01 140); /* #a1a1aa - Light muted text */
+  
+  --border: oklch(0.2 0.01 140); /* #3f3f46 - Dark border */
+  --input: oklch(0.2 0.01 140); /* #3f3f46 - Dark input */
+  
+  --destructive: oklch(0.35 0.12 25); /* #ef4444 - Red destructive */
+  --destructive-foreground: oklch(0.98 0.01 25); /* #fafafa - Light text on destructive */
+  
+  --success: oklch(0.35 0.12 140); /* #088C17 - NHIS Green success */
+  --success-foreground: oklch(0.98 0.01 140); /* #fafafa - Light text on success */
+  
+  --warning: oklch(0.35 0.12 60); /* #f59e0b - Amber warning */
+  --warning-foreground: oklch(0.98 0.01 60); /* #fafafa - Light text on warning */
+  
+  --ring: oklch(0.35 0.12 140 / 0.5); /* NHIS Green focus ring */
+  
+  /* Dark mode charts maintain NHIS brand identity */
+  --chart-1: oklch(0.45 0.15 140); /* Lighter NHIS Green for dark mode charts */
+  --chart-2: oklch(0.45 0.15 240); /* Lighter NHIS Blue for dark mode charts */
+  --chart-3: oklch(0.45 0.15 60); /* Lighter Amber for dark mode charts */
+  --chart-4: oklch(0.45 0.15 240); /* Lighter NHIS Blue for dark mode charts */
+  --chart-5: oklch(0.45 0.15 25); /* Lighter Red for dark mode charts */
+  
+  /* Dark sidebar maintains NHIS brand */
+  --sidebar: oklch(0.15 0.01 140); /* #262626 - Dark sidebar background */
+  --sidebar-foreground: oklch(0.98 0.01 140); /* #fafafa - Light text on sidebar */
+  --sidebar-primary: oklch(0.35 0.12 140); /* NHIS Green for dark sidebar primary */
+  --sidebar-accent: oklch(0.35 0.12 240); /* NHIS Blue for dark sidebar accent */
+  --sidebar-border: oklch(0.35 0.12 140 / 0.2); /* NHIS Green sidebar border */
+  --sidebar-ring: oklch(0.35 0.12 140 / 0.5); /* NHIS Green focus ring for sidebar */
 }
 
 @theme inline {
@@ -149,7 +174,7 @@
     font-family: var(--font-poppins), 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
   
-  /* NHIA Typography Guidelines - Poppins Font Family */
+  /* NHIS Typography Guidelines - Poppins Font Family */
   h1, h2, h3, h4, h5, h6 {
     @apply font-semibold tracking-tight;
     font-family: var(--font-poppins), 'Poppins', sans-serif;

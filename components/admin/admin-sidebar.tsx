@@ -40,17 +40,22 @@ export function AdminSidebar() {
   return (
     <div className="flex h-full w-72 flex-col bg-white/80 backdrop-blur-xl border-r border-slate-200/60 shadow-2xl">
       {/* Enhanced Header with Modern Design */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-800"></div>
+      <div className="relative overflow-visible bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-800">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.1%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
         <div className="relative px-6 py-8">
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg border border-white/30">
-              <Shield className="h-7 w-7 text-white" />
+              <Image 
+                src="/NHIA-1-1.png" 
+                alt="NHIA Logo" 
+                width={40} 
+                height={40}
+                className="object-contain"
+              />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white drop-shadow-lg">NHIA Admin</h1>
-              <p className="text-sm text-emerald-100 drop-shadow-md font-medium">System Administration</p>
+              <h1 className="text-xl font-bold text-white drop-shadow-lg font-poppins">NHIS CLAIMS MANAGEMENT</h1>
+              <p className="text-sm text-emerald-100 drop-shadow-md font-medium font-poppins">System Administration</p>
             </div>
           </div>
         </div>
@@ -59,7 +64,7 @@ export function AdminSidebar() {
       {/* Navigation Section */}
       <div className="flex-1 px-4 py-6">
         <div className="mb-6">
-          <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 px-2">Navigation</h3>
+          <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 px-2 font-poppins">Navigation</h3>
         </div>
         <nav className="space-y-2">
           {navigation.map((item) => {
@@ -69,7 +74,7 @@ export function AdminSidebar() {
                 <Button
                   variant={isActive ? "secondary" : "ghost"}
                   className={cn(
-                    "w-full justify-start gap-4 h-14 px-4 rounded-xl transition-all duration-200 group",
+                    "w-full justify-start gap-4 h-14 px-4 rounded-xl transition-all duration-200 group font-poppins",
                     isActive
                       ? "bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm"
                       : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 hover:shadow-sm",
@@ -84,9 +89,9 @@ export function AdminSidebar() {
                     <item.icon className="h-5 w-5" />
                   </div>
                   <div className="flex-1 text-left">
-                    <div className="font-medium">{item.name}</div>
+                    <div className="font-semibold font-poppins">{item.name}</div>
                     <div className={cn(
-                      "text-xs transition-colors",
+                      "text-xs transition-colors font-poppins",
                       isActive ? "text-emerald-600" : "text-slate-400 group-hover:text-emerald-600"
                     )}>
                       {item.description}
@@ -104,23 +109,23 @@ export function AdminSidebar() {
         <div className="mb-4 p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-slate-200/40">
           <div className="flex items-center space-x-3 mb-3">
             <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center shadow-md">
-              <span className="text-white font-semibold text-sm">
+              <span className="text-white font-semibold text-sm font-poppins">
                 {user?.name?.charAt(0)?.toUpperCase() || 'A'}
               </span>
             </div>
             <div>
-              <p className="font-semibold text-slate-900">{user?.name}</p>
-              <p className="text-sm text-slate-600">{user?.email}</p>
+              <p className="font-semibold text-slate-900 font-poppins">{user?.name}</p>
+              <p className="text-sm text-slate-600 font-poppins">{user?.email}</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-            <span className="text-xs font-medium text-emerald-700">NHIA Administrator</span>
+            <span className="text-xs font-semibold text-emerald-700 font-poppins">NHIS Administrator</span>
           </div>
         </div>
         <Button 
           variant="outline" 
-          className="w-full justify-center gap-3 h-12 bg-white/80 backdrop-blur-sm border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 rounded-xl transition-all duration-200" 
+          className="w-full justify-center gap-3 h-12 bg-white/80 backdrop-blur-sm border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 rounded-xl transition-all duration-200 font-poppins font-semibold" 
           onClick={logout}
         >
           <LogOut className="h-4 w-4" />

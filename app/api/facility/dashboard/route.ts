@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { verifyToken } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { claims, batches } from "@/lib/db/schema"
-import { eq, count, and, desc, gte } from "drizzle-orm"
+import { eq, count, and, desc, gte, sql } from "drizzle-orm"
 import { startOfMonth } from "date-fns"
 
 export async function GET(request: NextRequest) {
@@ -58,13 +58,30 @@ export async function GET(request: NextRequest) {
 
     const thisMonthClaims = thisMonthClaimsResult[0]?.count || 0
 
-    // Get total batches count
-    const totalBatchesResult = await db
-      .select({ count: count() })
-      .from(batches)
-      .where(eq(batches.facilityId, user.facilityId))
-
-    const totalBatches = totalBatchesResult[0]?.count || 0
+    // Get total batches count - handle case where batches table might not exist or have different schema
+    let totalBatches = 0
+    try {
+      const totalBatchesResult = await db.execute(
+        sql`SELECT COUNT(*) as count FROM batches WHERE facility_id = ${user.facilityId}`
+      )
+      console.log("Batches query successful:", totalBatchesResult.rows[0])
+      totalBatches = parseInt(totalBatchesResult.rows[0]?.count) || 0
+    } catch (batchError) {
+      console.error("Batches table query failed - table may not exist or have different schema:", batchError)
+      // Check if table exists at all
+      try {
+        const tableExists = await db.execute(
+          sql`SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'batches')`
+        )
+        console.log("Batches table exists:", tableExists.rows[0]?.exists)
+        if (!tableExists.rows[0]?.exists) {
+          console.log("Batches table does not exist - this is normal for initial setup")
+        }
+      } catch (checkError) {
+        console.error("Could not check if batches table exists:", checkError)
+      }
+      totalBatches = 0
+    }
 
     // Calculate monthly growth percentage (simplified calculation)
     const monthlyGrowth = totalClaims > 0 ? (thisMonthClaims / totalClaims) * 100 : 0

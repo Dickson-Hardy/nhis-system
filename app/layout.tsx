@@ -11,8 +11,8 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
-  title: "NHIA Portal",
-  description: "National Health Insurance Authority Management Portal",
+  title: "NHIS Claims Management Portal",
+  description: "National Health Insurance Scheme Claims Management System",
   generator: "v0.app",
 }
 

@@ -38,7 +38,9 @@ export async function GET(request: NextRequest) {
       conditions.push(isNull(claims.batchId))
     } else if (batchStatus === "assigned") {
       conditions.push(isNotNull(claims.batchId))
-    }    // Get claims with batch information
+    }
+
+    // Get claims with batch information
     const facilityClaims = await db
       .select({
         id: claims.id,
@@ -136,17 +138,17 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     const requiredFields = {
-      uniqueBeneficiaryId,
-      hospitalNumber,
-      beneficiaryName,
-      dateOfBirth,
-      age,
-      phoneNumber,
-      dateOfAdmission,
-      dateOfTreatment,
-      dateOfDischarge,
-      primaryDiagnosis,
-      treatmentProcedure,
+      uniqueBeneficiaryId: uniqueBeneficiaryId || null,
+      hospitalNumber: hospitalNumber || null,
+      beneficiaryName: beneficiaryName || null,
+      dateOfBirth: dateOfBirth || null,
+      age: age || null,
+      phoneNumber: phoneNumber || null,
+      dateOfAdmission: dateOfAdmission || null,
+      dateOfTreatment: dateOfTreatment || null,
+      dateOfDischarge: dateOfDischarge || null,
+      primaryDiagnosis: primaryDiagnosis || null,
+      treatmentProcedure: treatmentProcedure || null,
     }
 
     const missingFields = Object.entries(requiredFields)

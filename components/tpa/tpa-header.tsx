@@ -29,7 +29,7 @@ export function TPAHeader() {
             />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">NHIA TPA Portal</h1>
+            <h1 className="text-xl font-bold text-slate-900">NHIS TPA Portal</h1>
             <p className="text-sm text-slate-600">Third Party Administrator Dashboard</p>
           </div>
         </div>

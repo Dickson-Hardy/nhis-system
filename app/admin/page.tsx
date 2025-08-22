@@ -190,10 +190,8 @@ export default function AdminDashboard() {
                   <Activity className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-5xl font-bold bg-gradient-to-r from-slate-900 via-emerald-800 to-slate-900 bg-clip-text text-transparent">
-                    NHIA Admin Dashboard
-                  </h1>
-                  <p className="text-xl text-slate-600 font-medium">Comprehensive healthcare insurance system oversight</p>
+                  <h1 className="text-3xl font-bold text-slate-900 mb-2">NHIS Claims Management Dashboard</h1>
+                  <p className="text-slate-600">Welcome back! Here's what's happening with your claims system.</p>
                 </div>
               </div>
             </div>

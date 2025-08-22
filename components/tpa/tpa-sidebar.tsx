@@ -42,7 +42,7 @@ export function TPASidebar() {
             <Shield className="h-7 w-7 text-white drop-shadow-lg" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white drop-shadow-md">NHIA TPA Portal</h1>
+            <h1 className="text-xl font-bold text-white drop-shadow-md">NHIS TPA Portal</h1>
             <p className="text-sm text-green-100 drop-shadow-sm">Claims Management System</p>
           </div>
         </div>

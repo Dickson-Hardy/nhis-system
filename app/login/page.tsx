@@ -20,11 +20,11 @@ export default function LoginPage() {
                 />
               </div>
             </div>
-            <h1 className="text-4xl font-bold mb-4">National Health Insurance Authority</h1>
-            <p className="text-xl text-white/90 mb-2">Healthcare Management Portal</p>
+            <h1 className="text-4xl font-bold mb-4">National Health Insurance Scheme</h1>
+            <p className="text-xl text-white/90 mb-2">Claims Management Portal</p>
             <p className="text-lg text-green-200 mb-6 font-medium">Financial Access to Health Care for All</p>
             <p className="text-white/80 leading-relaxed">
-              Secure access to Nigeria's comprehensive healthcare insurance management system. Streamlining healthcare
+              Secure access to Nigeria's comprehensive healthcare insurance claims management system. Streamlining healthcare
               delivery for better patient outcomes.
             </p>
           </div>
