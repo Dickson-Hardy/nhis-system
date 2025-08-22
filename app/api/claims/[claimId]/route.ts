@@ -3,8 +3,8 @@ import { db, claims, facilities, tpas } from "@/lib/db"
 import { eq } from "drizzle-orm"
 import { verifyToken } from "@/lib/auth"
 
-// GET /api/claims/[id] - Get specific claim
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+// GET /api/claims/[claimId] - Get specific claim
+export async function GET(request: NextRequest, { params }: { params: Promise<{ claimId: string }> }) {
   try {
     const token = request.cookies.get("auth-token")?.value
     if (!token) {
@@ -16,8 +16,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
     }
 
-    const { id } = await params
-    const claimId = Number.parseInt(id)
+    const { claimId: claimIdParam } = await params
+    const claimId = Number.parseInt(claimIdParam)
 
     const claimData = await db
       .select({
@@ -98,8 +98,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-// PUT /api/claims/[id] - Update claim
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+// PUT /api/claims/[claimId] - Update claim
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ claimId: string }> }) {
   try {
     const token = request.cookies.get("auth-token")?.value
     if (!token) {
@@ -111,8 +111,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
     }
 
-    const { id } = await params
-    const claimId = Number.parseInt(id)
+    const { claimId: claimIdParam } = await params
+    const claimId = Number.parseInt(claimIdParam)
     const body = await request.json()
 
     // Handle date fields properly - convert string dates to YYYY-MM-DD format for PostgreSQL date type
@@ -198,8 +198,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-// DELETE /api/claims/[id] - Delete claim
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+// DELETE /api/claims/[claimId] - Delete claim
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ claimId: string }> }) {
   try {
     const token = request.cookies.get("auth-token")?.value
     if (!token) {
@@ -211,8 +211,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ error: "Access denied" }, { status: 403 })
     }
 
-    const { id } = await params
-    const claimId = Number.parseInt(id)
+    const { claimId: claimIdParam } = await params
+    const claimId = Number.parseInt(claimIdParam)
 
     const deletedClaim = await db.delete(claims).where(eq(claims.id, claimId)).returning()
 
