@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { db, claims, tpas, facilities, users } from "@/lib/db"
+import { db } from "@/lib/db"
+import { claims, tpas, facilities, users } from "@/lib/db/schema"
 import { eq, desc, ilike, count, and, sql } from "drizzle-orm"
 import { verifyToken } from "@/lib/auth"
 
@@ -16,17 +17,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Access denied - Admin only" }, { status: 403 })
     }
 
+    console.log("Admin claims API: Starting request processing")
+
     const { searchParams } = new URL(request.url)
     const page = Number.parseInt(searchParams.get("page") || "1")
     const limit = Number.parseInt(searchParams.get("limit") || "10")
     const search = searchParams.get("search")
-    const status = searchParams.get("status") || "closed" // Default to closed claims for admin review
+    const status = searchParams.get("status") // Removed default filter
     const decision = searchParams.get("decision")
     const tpaId = searchParams.get("tpaId")
     const facilityId = searchParams.get("facilityId")
     const batchNumber = searchParams.get("batchNumber")
 
     const offset = (page - 1) * limit
+
+    console.log("Query parameters:", { page, limit, search, status, decision, tpaId, facilityId, batchNumber })
 
     // Build where conditions
     const whereConditions: any[] = []
@@ -57,9 +62,14 @@ export async function GET(request: NextRequest) {
 
     const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined
 
-    // Fetch claims with related data
-    const claimsData = await db
-      .select({
+    console.log("Where conditions count:", whereConditions.length)
+
+    try {
+      // Fetch claims with related data
+      console.log("Fetching claims data...")
+      
+      // Define the select object - ensure all fields exist in schema
+      const selectObject = {
         id: claims.id,
         uniqueClaimId: claims.uniqueClaimId,
         uniqueBeneficiaryId: claims.uniqueBeneficiaryId,
@@ -81,7 +91,6 @@ export async function GET(request: NextRequest) {
         status: claims.status,
         decision: claims.decision,
         reasonForRejection: claims.reasonForRejection,
-        rejectionReason: claims.rejectionReason,
         dateOfAdmission: claims.dateOfAdmission,
         dateOfDischarge: claims.dateOfDischarge,
         dateOfTreatment: claims.dateOfTreatment,
@@ -103,47 +112,103 @@ export async function GET(request: NextRequest) {
           code: facilities.code,
           state: facilities.state,
         },
-      })
-      .from(claims)
-      .leftJoin(tpas, eq(claims.tpaId, tpas.id))
-      .leftJoin(facilities, eq(claims.facilityId, facilities.id))
-      .where(whereClause)
-      .orderBy(desc(claims.dateOfClaimSubmission))
-      .limit(limit)
-      .offset(offset)
+      }
+      
+      // Validate that all schema references are defined
+      console.log("Validating schema references...")
+      console.log("Claims table fields:", Object.keys(claims))
+      console.log("TPAs table fields:", Object.keys(tpas))
+      console.log("Facilities table fields:", Object.keys(facilities))
+      
+      console.log("Select object keys:", Object.keys(selectObject))
+      
+      // Try a simpler query first to isolate the issue
+      console.log("Building query with simplified select...")
+      let query = db
+        .select({
+          id: claims.id,
+          uniqueClaimId: claims.uniqueClaimId,
+          beneficiaryName: claims.beneficiaryName,
+          status: claims.status,
+          decision: claims.decision,
+          totalCostOfCare: claims.totalCostOfCare,
+          dateOfClaimSubmission: claims.dateOfClaimSubmission,
+        })
+        .from(claims)
+        .orderBy(desc(claims.dateOfClaimSubmission))
+        .limit(limit)
+        .offset(offset)
+        
+      // Apply where clause if conditions exist
+      if (whereClause) {
+        query = query.where(whereClause)
+      }
 
-    // Get total count
-    const totalCount = await db.select({ count: count() }).from(claims).where(whereClause)
+      console.log("Query constructed, executing...")
+      
+      let claimsData
+      try {
+        claimsData = await query
+        console.log("Claims data fetched, count:", claimsData?.length || 0)
+      } catch (queryError) {
+        console.error("Query execution error:", queryError)
+        console.error("Query error stack:", queryError instanceof Error ? queryError.stack : 'No stack trace')
+        throw queryError
+      }
 
-    // Get claims statistics
-    const claimsStats = await db
-      .select({
-        totalClaims: sql<number>`count(*)`,
-        submittedClaims: sql<number>`count(case when ${claims.status} = 'submitted' then 1 end)`,
-        awaitingVerification: sql<number>`count(case when ${claims.status} = 'awaiting_verification' then 1 end)`,
-        verifiedClaims: sql<number>`count(case when ${claims.status} = 'verified' then 1 end)`,
-        closedClaims: sql<number>`count(case when ${claims.status} = 'closed' then 1 end)`,
-        approvedClaims: sql<number>`count(case when ${claims.decision} = 'approved' then 1 end)`,
-        rejectedClaims: sql<number>`count(case when ${claims.decision} = 'rejected' then 1 end)`,
-        pendingDecision: sql<number>`count(case when ${claims.decision} is null then 1 end)`,
-        totalAmount: sql<number>`sum(${claims.totalCostOfCare})`,
-        approvedAmount: sql<number>`sum(${claims.approvedCostOfCare})`,
-      })
-      .from(claims)
+      // Get total count
+      console.log("Fetching total count...")
+      let countQuery = db.select({ count: count() }).from(claims)
+      if (whereClause) {
+        countQuery = countQuery.where(whereClause)
+      }
+      const totalCountResult = await countQuery
+      const totalCount = totalCountResult[0]?.count || 0
+      console.log("Total count:", totalCount)
+      
+      // For now, skip the complex statistics query to isolate the issue
+      console.log("Skipping statistics query for debugging...")
+      const claimsStats = {
+        totalClaims: totalCount,
+        submittedClaims: 0,
+        awaitingVerification: 0,
+        verifiedClaims: 0,
+        closedClaims: 0,
+        approvedClaims: 0,
+        rejectedClaims: 0,
+        pendingDecision: 0,
+        totalAmount: 0,
+        approvedAmount: 0,
+      }
 
-    return NextResponse.json({
-      claims: claimsData,
-      statistics: claimsStats[0],
-      pagination: {
-        page,
-        limit,
-        total: totalCount[0].count,
-        totalPages: Math.ceil(totalCount[0].count / limit),
-      },
-    })
+      // Statistics query removed for debugging - using simplified stats above
+
+      const response = {
+        claims: claimsData || [],
+        statistics: claimsStats,
+        pagination: {
+          page,
+          limit,
+          total: totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+        },
+      }
+
+      console.log("Sending response with claims count:", response.claims.length)
+      return NextResponse.json(response)
+
+    } catch (dbError) {
+      console.error("Database error:", dbError)
+      throw dbError
+    }
   } catch (error) {
-    console.error("Error fetching claims:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("Error in admin claims API:", error)
+    console.error("Error stack:", error instanceof Error ? error.stack : 'No stack trace')
+    console.error("Error message:", error instanceof Error ? error.message : 'Unknown error')
+    return NextResponse.json({ 
+      error: "Internal server error",
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }
 

@@ -31,7 +31,8 @@ import {
   MapPin,
   Calendar,
   DollarSign,
-  AlertTriangle
+  AlertTriangle,
+  AlertCircle
 } from "lucide-react"
 
 interface Claim {
@@ -201,7 +202,7 @@ export default function ClaimsManagement() {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setClaims(claims.map(c => c.id))
+      setSelectedClaims(claims.map(c => c.id))
     } else {
       setSelectedClaims([])
     }
@@ -271,311 +272,308 @@ export default function ClaimsManagement() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Claims Management</h1>
-          <p className="text-muted-foreground">Review and process healthcare claims</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export Report
-          </Button>
+    <div className="space-y-8">
+      {/* Modern Header Section */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-blue-50 to-indigo-50"></div>
+        <div className="relative rounded-3xl border border-white/20 bg-white/40 backdrop-blur-sm p-8 shadow-2xl">
+          <div className="flex items-center justify-between mb-6">
+            <div className="space-y-2">
+              <div className="flex items-center space-x-4">
+                <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-xl">
+                  <FileText className="h-7 w-7 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-emerald-800 to-slate-900 bg-clip-text text-transparent">
+                    Claims Management
+                  </h1>
+                  <p className="text-xl text-slate-600 font-medium">Review and process healthcare claims efficiently</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" size="lg" className="border-slate-300 bg-white/80 backdrop-blur-sm hover:bg-white shadow-lg rounded-xl">
+                <Download className="h-5 w-5 mr-2" />
+                Export Report
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Claims Statistics */}
+      {/* Enhanced Claims Statistics */}
       {statistics && (
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Claims</CardTitle>
-              <FileText className="h-4 w-4 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statistics.totalClaims}</div>
-              <p className="text-xs text-muted-foreground">
+        <div className="grid gap-6 md:grid-cols-4">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/40 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                <FileText className="h-6 w-6 text-white" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm text-slate-600 font-medium">Total Claims</p>
+              <p className="text-3xl font-bold text-slate-900">{statistics.totalClaims}</p>
+              <p className="text-sm text-slate-500">
                 {formatAmount(statistics.totalAmount?.toString())}
               </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Awaiting Review</CardTitle>
-              <Clock className="h-4 w-4 text-yellow-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statistics.awaitingVerification}</div>
-              <p className="text-xs text-muted-foreground">
+            </div>
+          </div>
+          
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/40 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Clock className="h-6 w-6 text-white" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm text-slate-600 font-medium">Awaiting Review</p>
+              <p className="text-3xl font-bold text-slate-900">{statistics.awaitingVerification}</p>
+              <p className="text-sm text-slate-500">
                 {statistics.pendingDecision} pending decisions
               </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Approved Claims</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statistics.approvedClaims}</div>
-              <p className="text-xs text-muted-foreground">
+            </div>
+          </div>
+          
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/40 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+                <CheckCircle className="h-6 w-6 text-white" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm text-slate-600 font-medium">Approved Claims</p>
+              <p className="text-3xl font-bold text-slate-900">{statistics.approvedClaims}</p>
+              <p className="text-sm text-slate-500">
                 {formatAmount(statistics.approvedAmount?.toString())}
               </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Rejected Claims</CardTitle>
-              <XCircle className="h-4 w-4 text-red-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statistics.rejectedClaims}</div>
-              <p className="text-xs text-muted-foreground">
+            </div>
+          </div>
+          
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/40 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center shadow-lg">
+                <AlertCircle className="h-6 w-6 text-white" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm text-slate-600 font-medium">Rejected Claims</p>
+              <p className="text-3xl font-bold text-slate-900">{statistics.rejectedClaims}</p>
+              <p className="text-sm text-slate-500">
                 {((statistics.rejectedClaims / statistics.totalClaims) * 100).toFixed(1)}% rejection rate
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Filters and Actions */}
-      <div className="flex items-center justify-between space-x-4">
-        <div className="flex items-center space-x-4 flex-1">
-          <Input
-            placeholder="Search by claim ID..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value)
-              fetchClaims(1, e.target.value, statusFilter === "all" ? "" : statusFilter, decisionFilter === "all" ? "" : decisionFilter)
-            }}
-            className="max-w-sm"
-          />
-          <Select value={statusFilter || "all"} onValueChange={(value) => {
-            const filterValue = value === "all" ? "" : value
-            setStatusFilter(filterValue)
-            fetchClaims(1, searchTerm, filterValue, decisionFilter === "all" ? "" : decisionFilter)
-          }}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="submitted">Submitted</SelectItem>
-              <SelectItem value="awaiting_verification">Awaiting Verification</SelectItem>
-              <SelectItem value="verified">Verified</SelectItem>
-              <SelectItem value="verified_awaiting_payment">Awaiting Payment</SelectItem>
-              <SelectItem value="verified_paid">Paid</SelectItem>
-              <SelectItem value="not_verified">Not Verified</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={decisionFilter || "all"} onValueChange={(value) => {
-            const filterValue = value === "all" ? "" : value
-            setDecisionFilter(filterValue)
-            fetchClaims(1, searchTerm, statusFilter === "all" ? "" : statusFilter, filterValue)
-          }}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filter by decision" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Decisions</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        {selectedClaims.length > 0 && (
-          <div className="flex space-x-2">
-            <Button
-              onClick={() => processClaims("verify")}
-              disabled={isProcessing}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {isProcessing ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <CheckCircle className="h-4 w-4 mr-2" />
-              )}
-              Verify ({selectedClaims.length})
-            </Button>
-            <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-green-600 hover:bg-green-700">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Review ({selectedClaims.length})
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Review Claims</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Decision</Label>
-                    <Select value={reviewData.decision} onValueChange={(value) => 
-                      setReviewData({...reviewData, decision: value})
-                    }>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select decision" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="approved">Approve</SelectItem>
-                        <SelectItem value="rejected">Reject</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {reviewData.decision === "approved" && (
-                    <div>
-                      <Label>Approved Amount (optional)</Label>
-                      <Input
-                        placeholder="Enter approved amount"
-                        value={reviewData.approvedAmount}
-                        onChange={(e) => setReviewData({...reviewData, approvedAmount: e.target.value})}
-                      />
-                    </div>
-                  )}
-                  {reviewData.decision === "rejected" && (
-                    <div>
-                      <Label>Reason for Rejection</Label>
-                      <Textarea
-                        placeholder="Enter reason for rejection"
-                        value={reviewData.reasonForRejection}
-                        onChange={(e) => setReviewData({...reviewData, reasonForRejection: e.target.value})}
-                      />
-                    </div>
-                  )}
-                  <div className="flex justify-end space-x-2">
-                    <Button variant="outline" onClick={() => setIsReviewOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={() => processClaims("approve")}
-                      disabled={!reviewData.decision || isProcessing}
-                    >
-                      {isProcessing ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        "Submit Decision"
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+      {/* Enhanced Filters and Actions */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/40 shadow-xl p-6">
+        <div className="flex items-center justify-between space-x-6">
+          <div className="flex items-center space-x-4 flex-1">
+            <div className="relative flex-1 max-w-md">
+              <Input
+                placeholder="Search by claim ID, beneficiary name..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value)
+                  fetchClaims(1, e.target.value, statusFilter === "all" ? "" : statusFilter, decisionFilter === "all" ? "" : decisionFilter)
+                }}
+                className="h-12 rounded-xl border-slate-300 bg-white/80 backdrop-blur-sm shadow-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={(value) => {
+              setStatusFilter(value)
+              fetchClaims(1, searchTerm, value === "all" ? "" : value, decisionFilter === "all" ? "" : decisionFilter)
+            }}>
+              <SelectTrigger className="h-12 rounded-xl border-slate-300 bg-white/80 backdrop-blur-sm shadow-sm w-40">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="submitted">Submitted</SelectItem>
+                <SelectItem value="awaiting_verification">Awaiting Verification</SelectItem>
+                <SelectItem value="verified">Verified</SelectItem>
+                <SelectItem value="not_verified">Not Verified</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={decisionFilter} onValueChange={(value) => {
+              setDecisionFilter(value)
+              fetchClaims(1, searchTerm, statusFilter === "all" ? "" : statusFilter, value === "all" ? "" : value)
+            }}>
+              <SelectTrigger className="h-12 rounded-xl border-slate-300 bg-white/80 backdrop-blur-sm shadow-sm w-40">
+                <SelectValue placeholder="Decision" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Decisions</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        )}
+          
+          <div className="flex items-center space-x-3">
+            {selectedClaims.length > 0 && (
+              <div className="flex items-center space-x-3">
+                <span className="text-sm text-slate-600 font-medium">
+                  {selectedClaims.length} claim{selectedClaims.length !== 1 ? 's' : ''} selected
+                </span>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setSelectedClaims([])}
+                  className="border-slate-300 bg-white/80 backdrop-blur-sm hover:bg-white shadow-sm rounded-xl"
+                >
+                  Clear Selection
+                </Button>
+                <Button
+                  size="lg"
+                  onClick={() => setIsReviewOpen(true)}
+                  disabled={isProcessing}
+                  className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white shadow-lg rounded-xl"
+                >
+                  {isProcessing ? (
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  ) : (
+                    <CheckCircle className="h-5 w-5 mr-2" />
+                  )}
+                  Review Selected
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {error && (
-        <Alert>
-          <AlertDescription>{error}</AlertDescription>
+        <Alert className="border-red-200 bg-red-50/80 backdrop-blur-sm rounded-2xl">
+          <AlertDescription className="text-red-800 font-medium">{error}</AlertDescription>
         </Alert>
       )}
 
-      {/* Claims Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Claims ({pagination.total})</CardTitle>
-        </CardHeader>
-        <CardContent>
+      {/* Modern Claims Table */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/40 shadow-xl overflow-hidden">
+        <div className="p-6 border-b border-slate-200/50">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-slate-900">Claims Overview</h2>
+            <div className="flex items-center space-x-3">
+              <span className="text-sm text-slate-600 font-medium">
+                Total: {pagination.total.toLocaleString()}
+              </span>
+              <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 border-emerald-200 px-3 py-1">
+                Page {pagination.page} of {pagination.totalPages}
+              </Badge>
+            </div>
+          </div>
+        </div>
+        
+        <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">
+              <TableRow className="bg-slate-50/80 hover:bg-slate-100/80">
+                <TableHead className="w-16 px-6 py-4 font-semibold text-slate-700">
                   <Checkbox
                     checked={selectedClaims.length === claims.length && claims.length > 0}
                     onCheckedChange={handleSelectAll}
+                    className="rounded-lg"
                   />
                 </TableHead>
-                <TableHead>Claim Details</TableHead>
-                <TableHead>Beneficiary</TableHead>
-                <TableHead>TPA/Facility</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Decision</TableHead>
-                <TableHead>Submitted</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="px-6 py-4 font-semibold text-slate-700">Claim Details</TableHead>
+                <TableHead className="px-6 py-4 font-semibold text-slate-700">Beneficiary</TableHead>
+                <TableHead className="px-6 py-4 font-semibold text-slate-700">TPA/Facility</TableHead>
+                <TableHead className="px-6 py-4 font-semibold text-slate-700">Amount</TableHead>
+                <TableHead className="px-6 py-4 font-semibold text-slate-700">Status</TableHead>
+                <TableHead className="px-6 py-4 font-semibold text-slate-700">Decision</TableHead>
+                <TableHead className="px-6 py-4 font-semibold text-slate-700">Submitted</TableHead>
+                <TableHead className="px-6 py-4 font-semibold text-slate-700">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {claims.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                    <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                    <p>No claims found.</p>
+                  <TableCell colSpan={9} className="text-center py-16">
+                    <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <FileText className="h-10 w-10 text-slate-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-700 mb-2">No claims found</h3>
+                    <p className="text-slate-500">Try adjusting your search or filter criteria</p>
                   </TableCell>
                 </TableRow>
               ) : (
                 claims.map((claim) => (
-                  <TableRow key={claim.id}>
-                    <TableCell>
+                  <TableRow key={claim.id} className="hover:bg-slate-50/80 transition-colors duration-200 border-b border-slate-100/50">
+                    <TableCell className="px-6 py-4">
                       <Checkbox
                         checked={selectedClaims.includes(claim.id)}
                         onCheckedChange={(checked) => handleSelectClaim(claim.id, checked as boolean)}
+                        className="rounded-lg"
                       />
                     </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{claim.uniqueClaimId}</p>
+                    <TableCell className="px-6 py-4">
+                      <div className="space-y-2">
+                        <p className="font-semibold text-slate-900 text-lg">{claim.uniqueClaimId}</p>
                         {claim.batchNumber && (
-                          <p className="text-sm text-muted-foreground">{claim.batchNumber}</p>
+                          <p className="text-sm text-slate-600 bg-slate-100 px-2 py-1 rounded-lg inline-block">
+                            Batch: {claim.batchNumber}
+                          </p>
                         )}
                         {claim.primaryDiagnosis && (
-                          <p className="text-sm text-muted-foreground">{claim.primaryDiagnosis}</p>
+                          <p className="text-sm text-slate-500 line-clamp-2">{claim.primaryDiagnosis}</p>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{claim.beneficiaryName}</p>
+                    <TableCell className="px-6 py-4">
+                      <div className="space-y-2">
+                        <p className="font-semibold text-slate-900 text-lg">{claim.beneficiaryName}</p>
                         {claim.age && (
-                          <p className="text-sm text-muted-foreground">Age: {claim.age}</p>
+                          <p className="text-sm text-slate-600 bg-slate-100 px-3 py-1 rounded-lg inline-block">
+                            Age: {claim.age}
+                          </p>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
+                    <TableCell className="px-6 py-4">
+                      <div className="space-y-2">
                         {claim.tpa && (
-                          <p className="text-sm flex items-center">
-                            <Building2 className="h-3 w-3 mr-1" />
-                            {claim.tpa.name}
-                          </p>
+                          <div className="flex items-center space-x-2 bg-blue-50 px-3 py-2 rounded-lg">
+                            <Building2 className="h-4 w-4 text-blue-600" />
+                            <span className="text-sm font-medium text-blue-800">{claim.tpa.name}</span>
+                          </div>
                         )}
                         {claim.facility && (
-                          <p className="text-sm text-muted-foreground flex items-center">
-                            <MapPin className="h-3 w-3 mr-1" />
-                            {claim.facility.name}
-                          </p>
+                          <div className="flex items-center space-x-2 bg-purple-50 px-3 py-2 rounded-lg">
+                            <MapPin className="h-4 w-4 text-purple-600" />
+                            <span className="text-sm font-medium text-purple-800">{claim.facility.name}</span>
+                          </div>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{formatAmount(claim.totalCostOfCare)}</p>
+                    <TableCell className="px-6 py-4">
+                      <div className="space-y-2">
+                        <p className="font-semibold text-slate-900 text-lg">{formatAmount(claim.totalCostOfCare)}</p>
                         {claim.approvedCostOfCare && claim.approvedCostOfCare !== claim.totalCostOfCare && (
-                          <p className="text-sm text-green-600">
+                          <p className="text-sm text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
                             Approved: {formatAmount(claim.approvedCostOfCare)}
                           </p>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(claim.status)}>
+                    <TableCell className="px-6 py-4">
+                      <Badge className={`${getStatusColor(claim.status)} px-3 py-1 text-sm font-medium rounded-lg`}>
                         {claim.status.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="px-6 py-4">
                       {claim.decision ? (
-                        <Badge className={getDecisionColor(claim.decision)}>
+                        <Badge className={`${getDecisionColor(claim.decision)} px-3 py-1 text-sm font-medium rounded-lg`}>
                           {claim.decision.charAt(0).toUpperCase() + claim.decision.slice(1)}
                         </Badge>
                       ) : (
                         <Badge variant="outline">Pending</Badge>
                       )}
                     </TableCell>
-                    <TableCell>{formatDate(claim.dateOfClaimSubmission)}</TableCell>
-                    <TableCell>
+                    <TableCell className="px-6 py-4">{formatDate(claim.dateOfClaimSubmission)}</TableCell>
+                    <TableCell className="px-6 py-4">
                       <Button
                         variant="outline"
                         size="sm"
@@ -583,6 +581,7 @@ export default function ClaimsManagement() {
                           setSelectedClaim(claim)
                           setIsDetailOpen(true)
                         }}
+                        className="rounded-lg border-slate-300 hover:bg-slate-50"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -594,16 +593,17 @@ export default function ClaimsManagement() {
           </Table>
 
           {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
-              <div className="text-sm text-muted-foreground">
-                Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
+            <div className="flex items-center justify-between p-6 border-t border-slate-200/50">
+              <div className="text-sm text-slate-600 font-medium">
+                Page {pagination.page} of {pagination.totalPages} ({pagination.total.toLocaleString()} total)
               </div>
-              <div className="flex space-x-2">
+              <div className="flex space-x-3">
                 <Button
                   variant="outline"
                   size="sm"
                   disabled={pagination.page <= 1}
                   onClick={() => fetchClaims(pagination.page - 1, searchTerm, statusFilter === "all" ? "" : statusFilter, decisionFilter === "all" ? "" : decisionFilter)}
+                  className="rounded-lg border-slate-300 hover:bg-slate-50"
                 >
                   Previous
                 </Button>
@@ -612,14 +612,15 @@ export default function ClaimsManagement() {
                   size="sm"
                   disabled={pagination.page >= pagination.totalPages}
                   onClick={() => fetchClaims(pagination.page + 1, searchTerm, statusFilter === "all" ? "" : statusFilter, decisionFilter === "all" ? "" : decisionFilter)}
+                  className="rounded-lg border-slate-300 hover:bg-slate-50"
                 >
                   Next
                 </Button>
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Claim Detail Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
@@ -636,13 +637,13 @@ export default function ClaimsManagement() {
                     <p><strong>Claim ID:</strong> {selectedClaim.uniqueClaimId}</p>
                     <p><strong>Batch:</strong> {selectedClaim.batchNumber || "N/A"}</p>
                     <p><strong>Status:</strong> 
-                      <Badge className={getStatusColor(selectedClaim.status)} size="sm">
+                      <Badge className={`${getStatusColor(selectedClaim.status)} ml-2`}>
                         {selectedClaim.status.replace(/_/g, " ")}
                       </Badge>
                     </p>
                     <p><strong>Decision:</strong> 
                       {selectedClaim.decision ? (
-                        <Badge className={getDecisionColor(selectedClaim.decision)} size="sm">
+                        <Badge className={`${getDecisionColor(selectedClaim.decision)} ml-2`}>
                           {selectedClaim.decision}
                         </Badge>
                       ) : "Pending"}
