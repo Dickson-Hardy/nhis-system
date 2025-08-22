@@ -14,7 +14,7 @@ interface Claim {
   beneficiaryName: string
   facilityName: string
   totalCostOfCare: number
-  status: "pending" | "approved" | "rejected"
+  status: "submitted" | "awaiting_verification" | "verified" | "verified_awaiting_payment" | "verified_paid" | "rejected"
   dateOfAdmission: string
   primaryDiagnosis: string
 }
@@ -40,12 +40,25 @@ export function ClaimsTable({ claims }: ClaimsTableProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "approved":
-        return "bg-green-100 text-green-800 border-green-200"
-      case "rejected":
-        return "bg-red-100 text-red-800 border-red-200"
-      default:
-        return "bg-blue-100 text-blue-800 border-blue-200"
+      case 'submitted': return 'bg-blue-100 text-blue-800 border-blue-200'
+      case 'awaiting_verification': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      case 'verified': return 'bg-green-100 text-green-800 border-green-200'
+      case 'verified_awaiting_payment': return 'bg-purple-100 text-purple-800 border-purple-200'
+      case 'verified_paid': return 'bg-emerald-100 text-emerald-800 border-emerald-200'
+      case 'rejected': return 'bg-red-100 text-red-800 border-red-200'
+      default: return 'bg-gray-100 text-gray-800 border-gray-200'
+    }
+  }
+
+  const getStatusDisplay = (status: string) => {
+    switch (status) {
+      case 'submitted': return 'Submitted'
+      case 'awaiting_verification': return 'Awaiting Verification'
+      case 'verified': return 'Verified'
+      case 'verified_awaiting_payment': return 'Awaiting Payment'
+      case 'verified_paid': return 'Paid'
+      case 'rejected': return 'Rejected'
+      default: return status
     }
   }
 
@@ -88,7 +101,7 @@ export function ClaimsTable({ claims }: ClaimsTableProps) {
                   <TableCell className="text-card-foreground">₦{claim.totalCostOfCare.toLocaleString()}</TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(claim.status)}>
-                      {claim.status.charAt(0).toUpperCase() + claim.status.slice(1)}
+                      {getStatusDisplay(claim.status)}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-card-foreground">

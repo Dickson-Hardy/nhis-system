@@ -10,6 +10,7 @@ import Link from "next/link"
 import { Plus, FileText, Send, Package, Calendar } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { format } from "date-fns"
+import { StatusWorkflow } from "@/components/tpa/status-workflow"
 
 interface DashboardStats {
   totalPatients: number
@@ -119,6 +120,14 @@ export function FacilityDashboardClient() {
       ) : (
         <>
           <FacilityStats {...stats} />
+
+          {/* Status Workflow Visualization */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/40 shadow-xl p-6">
+            <StatusWorkflow 
+              currentStatus="submitted" 
+              className="bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200"
+            />
+          </div>
 
           {/* Main Content Tabs */}
           <Tabs defaultValue="overview" className="space-y-6">

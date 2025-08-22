@@ -11,6 +11,8 @@ import { GeographicDistributionWidget } from "@/components/admin/geographic-dist
 import { RealTimeMonitoringWidget } from "@/components/admin/real-time-monitoring-widget"
 import { ExecutiveSummaryWidget } from "@/components/admin/executive-summary-widget"
 import { QuickActionsWidget } from "@/components/admin/quick-actions-widget"
+import { TPAFinancialBreakdownWidget } from "@/components/admin/tpa-financial-breakdown-widget"
+import { DateFilterWidget } from "@/components/admin/date-filter-widget"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -39,6 +41,13 @@ interface AdminDashboardData {
     avgClaimAmount: number
   }
   tpaPerformance: any[]
+  tpaFinancialBreakdown: any[]
+  impactMetrics: {
+    womenTreated: number
+    claimsVerified: number
+    totalClaimsReceived: number
+    totalBeneficiaries: number
+  }
   qualityMetrics: {
     totalDuplicates: number
     duplicateAmount: number
@@ -53,15 +62,27 @@ export default function AdminDashboard() {
   const [dashboardData, setDashboardData] = useState<AdminDashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("overview")
+  const [startDate, setStartDate] = useState<Date | null>(null)
+  const [endDate, setEndDate] = useState<Date | null>(null)
 
   useEffect(() => {
     fetchDashboardData()
-  }, [])
+  }, [startDate, endDate])
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/admin/dashboard', { credentials: 'include' })
+      
+      // Build query parameters for date filtering
+      const params = new URLSearchParams()
+      if (startDate) {
+        params.append('startDate', startDate.toISOString())
+      }
+      if (endDate) {
+        params.append('endDate', endDate.toISOString())
+      }
+      
+      const response = await fetch(`/api/admin/dashboard?${params.toString()}`, { credentials: 'include' })
       
       if (response.ok) {
         const data = await response.json()
@@ -89,6 +110,13 @@ export default function AdminDashboard() {
             avgClaimAmount: 0
           },
           tpaPerformance: [],
+          tpaFinancialBreakdown: [],
+          impactMetrics: {
+            womenTreated: 0,
+            claimsVerified: 0,
+            totalClaimsReceived: 0,
+            totalBeneficiaries: 0
+          },
           qualityMetrics: {
             totalDuplicates: 0,
             duplicateAmount: 0,
@@ -122,6 +150,13 @@ export default function AdminDashboard() {
           avgClaimAmount: 0
         },
         tpaPerformance: [],
+        tpaFinancialBreakdown: [],
+        impactMetrics: {
+          womenTreated: 0,
+          claimsVerified: 0,
+          totalClaimsReceived: 0,
+          totalBeneficiaries: 0
+        },
         qualityMetrics: {
           totalDuplicates: 0,
           duplicateAmount: 0,
@@ -171,6 +206,8 @@ export default function AdminDashboard() {
     statusBreakdown = {},
     financialSummary = { totalSubmitted: 0, totalApproved: 0, pendingAmount: 0, avgClaimAmount: 0 },
     tpaPerformance = [],
+    tpaFinancialBreakdown = [],
+    impactMetrics = { womenTreated: 0, claimsVerified: 0, totalClaimsReceived: 0, totalBeneficiaries: 0 },
     qualityMetrics = { totalDuplicates: 0, duplicateAmount: 0, errorsByType: {}, errorsBySeverity: {} },
     recentClaims = [],
     geographicData = []
@@ -285,15 +322,28 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* Date Filter Widget */}
+      <DateFilterWidget 
+        onDateChange={(start, end) => {
+          setStartDate(start)
+          setEndDate(end)
+        }}
+        onRefresh={fetchDashboardData}
+        isLoading={loading}
+      />
+
       {/* Modern Tab Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/40 shadow-xl p-2">
-          <TabsList className="grid w-full grid-cols-7 h-16 bg-transparent">
+          <TabsList className="grid w-full grid-cols-8 h-16 bg-transparent">
             <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-emerald-700 rounded-xl transition-all duration-200">
               Overview
             </TabsTrigger>
             <TabsTrigger value="financial" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-emerald-700 rounded-xl transition-all duration-200">
               Financial
+            </TabsTrigger>
+            <TabsTrigger value="tpa-breakdown" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-emerald-700 rounded-xl transition-all duration-200">
+              TPA Breakdown
             </TabsTrigger>
             <TabsTrigger value="tpa-performance" className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-emerald-700 rounded-xl transition-all duration-200">
               TPA Performance
@@ -437,6 +487,13 @@ export default function AdminDashboard() {
           <FinancialOverviewWidget 
             financialSummary={financialSummary}
             statusBreakdown={statusBreakdown}
+          />
+        </TabsContent>
+
+        <TabsContent value="tpa-breakdown">
+          <TPAFinancialBreakdownWidget 
+            tpaFinancialBreakdown={tpaFinancialBreakdown}
+            impactMetrics={impactMetrics}
           />
         </TabsContent>
 

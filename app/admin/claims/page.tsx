@@ -34,6 +34,7 @@ import {
   AlertTriangle,
   AlertCircle
 } from "lucide-react"
+import { StatusWorkflow } from "@/components/tpa/status-workflow"
 
 interface Claim {
   id: number
@@ -365,6 +366,14 @@ export default function ClaimsManagement() {
           </div>
         </div>
       )}
+
+      {/* Status Workflow Visualization */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/40 shadow-xl p-6">
+        <StatusWorkflow 
+          currentStatus={statusFilter === "all" ? "submitted" : statusFilter} 
+          className="bg-gradient-to-r from-emerald-50 to-blue-50 border-2 border-emerald-200"
+        />
+      </div>
 
       {/* Enhanced Filters and Actions */}
       <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/40 shadow-xl p-6">

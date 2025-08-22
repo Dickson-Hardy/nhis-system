@@ -26,6 +26,7 @@ import {
 } from "lucide-react"
 import { useClaims } from "@/hooks/use-claims"
 import { useState } from "react"
+import { StatusWorkflow } from "@/components/tpa/status-workflow"
 
 export default function ClaimsManagementPage() {
   const { claims, stats, loading, error, refetch } = useClaims()
@@ -180,6 +181,14 @@ export default function ClaimsManagementPage() {
           </div>
         </CardHeader>
         <CardContent className="p-8">
+          {/* Status Workflow Visualization */}
+          <div className="mb-8">
+            <StatusWorkflow 
+              currentStatus={selectedTab} 
+              className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200"
+            />
+          </div>
+          
           <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
             <TabsList className="grid w-full grid-cols-4 h-16 bg-gray-100 p-2 rounded-2xl mb-8">
               <TabsTrigger value="submitted" className="text-lg font-semibold text-gray-700 data-[state=active]:bg-[#088C17] data-[state=active]:text-white data-[state=active]:drop-shadow-md rounded-xl transition-all duration-200">

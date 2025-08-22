@@ -63,6 +63,7 @@ export const claims = pgTable("claims", {
   // Patient Information
   dateOfAdmission: date("date_of_admission"),
   beneficiaryName: varchar("beneficiary_name", { length: 255 }).notNull(),
+  beneficiaryGender: varchar("beneficiary_gender", { length: 10 }), // 'Male', 'Female'
   dateOfBirth: date("date_of_birth"),
   age: integer("age"),
   address: text("address"),
